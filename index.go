@@ -11,20 +11,25 @@ import (
 )
 
 
-type PagesData struct {
-    Number      int
-    Description string
-    Status      string
-}
+// type PagesData struct {
+//     Number      int
+//     Description string
+//     Status      string
+// }
 
 
-func setData() PagesData {
-    data := PagesData{
-        Number:      123,
-        Description: "Page number",
-        Status:      "Done!",
+func setData() [1][3][12][5]int {
+    var data [1][3][12][5]int;
+
+    for i := 0; i < 3; i++ {
+        for j := 0; j < 12; j++ {
+            for k := 0; k < 5; k++ {
+                data[0][i][j][k] = k;
+            }
+        }
     }
-    return data
+
+    return data;
 }
 
 
@@ -40,3 +45,4 @@ func main() {
 
     app.Run()
 }
+
