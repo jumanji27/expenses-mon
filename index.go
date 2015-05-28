@@ -4,6 +4,9 @@ package main
 import (
     "fmt"
     "log"
+    // "reflect"
+
+    "encoding/json"
 
     "github.com/go-martini/martini"
     "github.com/martini-contrib/render"
@@ -13,21 +16,25 @@ import (
 )
 
 
+type Data struct {
+    index [1][3][12][5]Value
+}
+
 type Value struct {
     key string
     value int
 }
 
 
-func db_init() {
+func db_init() string {
     session, err := mgo.Dial("localhost:27017")
     if err != nil {
-        panic(err)
+        log.Fatal(err)
     }
 
     defer session.Close()
 
-    c := session.DB("test").C("test")
+    collection := session.DB("test").C("test")
 
 
     const key string = "value"
@@ -41,32 +48,35 @@ func db_init() {
         }
     }
 
-    err = c.Insert(data)
+    fmt.Println(data)
+
+    err = collection.Insert(data)
     if err != nil {
         log.Fatal(err)
     }
+
+    raw_result := Data{}
+    err = collection.Find(nil).One(&raw_result)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    result, err := json.Marshal(raw_result.index)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    return string(result)
 }
-
-// func db_find() {
-//     result := Data{}
-//     err = c.Find(bson.M{"name": "Ale"}).One(&result)
-//     if err != nil {
-//         log.Fatal(err)
-//     }
-
-//     fmt.Println("Phone:", result.Phone)
-// }
 
 
 func main() {
     app := martini.Classic()
     app.Use(render.Renderer())
 
-    db_init()
-
-    // app.Post("/api/v1/get", func(render render.Render) {
-    //     render.JSON(200, db_find())
-    // })
+    app.Post("/api/v1/get", func(render render.Render) {
+        render.JSON(200, db_init())
+    })
 
     app.Post("/api/v1/set", func(render render.Render) {
         render.JSON(200, map[string]interface{}{"success": true, "error": nil})
