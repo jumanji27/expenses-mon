@@ -74,6 +74,10 @@ func main() {
     app := martini.Classic()
     app.Use(render.Renderer())
 
+    app.Get("/", func(render render.Render) {
+        render.JSON(200, map[string]interface{}{"greeting": "Hello, I'm your API!"})
+    })
+
     app.Post("/api/v1/get", func(render render.Render) {
         render.JSON(200, db_init())
     })
