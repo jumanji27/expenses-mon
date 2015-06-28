@@ -17,14 +17,8 @@ import (
 
 
 type Data struct {
-    index [1][3][12][5]Value
+    Value [1][3][12][5]int
 }
-
-type Value struct {
-    key string
-    value int
-}
-
 
 func db_init() string {
     session, err := mgo.Dial("localhost:27017")
@@ -36,19 +30,17 @@ func db_init() string {
 
     collection := session.DB("test").C("test")
 
-
-    const key string = "value"
-    var data [1][3][12][5]Value
+    var local_data [1][3][12][5]int
 
     for i := 0; i < 3; i++ {
         for j := 0; j < 12; j++ {
             for k := 0; k < 5; k++ {
-                data[0][i][j][k] = Value{key, k}
+                local_data[0][i][j][k] = k + 1
             }
         }
     }
 
-    fmt.Println(data)
+    data := Data{Value: local_data}
 
     err = collection.Insert(data)
     if err != nil {
@@ -61,7 +53,7 @@ func db_init() string {
         log.Fatal(err)
     }
 
-    result, err := json.Marshal(raw_result.index)
+    result, err := json.Marshal(raw_result.Value)
     if err != nil {
         log.Fatal(err)
     }
