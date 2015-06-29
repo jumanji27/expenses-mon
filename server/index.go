@@ -4,7 +4,7 @@ package main
 import (
     "fmt"
     "log"
-    "reflect"
+    // "reflect"
 
     "encoding/json"
 
@@ -82,8 +82,6 @@ func (self Index) route(martini_app *martini.ClassicMartini) {
 func main() {
     martini_app := martini.Classic()
     martini_app.Use(render.Renderer())
-
-    fmt.Println(reflect.TypeOf(martini_app))
 
     app := Index{}
     app.route(martini_app)
