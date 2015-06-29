@@ -4,7 +4,7 @@ package main
 import (
     "fmt"
     "log"
-    // "reflect"
+    "reflect"
 
     "encoding/json"
 
@@ -15,6 +15,7 @@ import (
     // "gopkg.in/mgo.v2/bson"
 )
 
+type Index struct {}
 
 type Data struct {
     Value [1][3][12][5]int
@@ -61,25 +62,34 @@ func db_init() string {
     return string(result)
 }
 
-
-func main() {
-    app := martini.Classic()
-    app.Use(render.Renderer())
-
-    app.Get("/", func(render render.Render) {
-        render.JSON(200, map[string]interface{}{"greeting": "Hello, I'm your API!"})
+func (self Index) route(martini_app *martini.ClassicMartini) {
+    martini_app.Get("/", func(render render.Render) {
+        render.JSON(200, map[string]interface{}{
+            "success": map[string]interface{}{"greeting": "Hello, I'm your API!"},
+            "error": nil,
+        })
     })
 
-    app.Post("/api/v1/get", func(render render.Render) {
+    martini_app.Post("/api/v1/get", func(render render.Render) {
         render.JSON(200, db_init())
     })
 
-    app.Post("/api/v1/set", func(render render.Render) {
+    martini_app.Post("/api/v1/set", func(render render.Render) {
         render.JSON(200, map[string]interface{}{"success": true, "error": nil})
     })
+}
+
+func main() {
+    martini_app := martini.Classic()
+    martini_app.Use(render.Renderer())
+
+    fmt.Println(reflect.TypeOf(martini_app))
+
+    app := Index{}
+    app.route(martini_app)
 
     fmt.Printf("App starting!\n")
 
-    app.Run()
+    martini_app.Run()
 }
 
