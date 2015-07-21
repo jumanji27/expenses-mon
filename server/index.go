@@ -15,11 +15,15 @@ import (
     // "gopkg.in/mgo.v2/bson"
 )
 
-type Index struct {}
+type Index struct {
+    MongoCollection *mgo.Collection
+    Data
+}
 
 type Data struct {
     Value [1][3][12][5]int
 }
+
 
 func (self Index) db_init() {
     session, err := mgo.Dial("localhost:27017")
@@ -29,32 +33,12 @@ func (self Index) db_init() {
 
     defer session.Close()
 
-    collection := session.DB("test").C("test")
-
-    // var local_data [1][3][12][5]int
-
-    // for i := 0; i < 3; i++ {
-    //     for j := 0; j < 12; j++ {
-    //         for k := 0; k < 5; k++ {
-    //             local_data[0][i][j][k] = k + 1
-    //         }
-    //     }
-    // }
-
-    // data := Data{Value: local_data}
-
-    // err = collection.Insert(data)
-    // if err != nil {
-    //     log.Fatal(err)
-    // }
+    self.MongoCollection = session.DB("test").C("test")
 }
 
 func (self Index) db_get() string {
     raw_result := Data{}
-    err = collection.Find(nil).One(&raw_result)
-    if err != nil {
-        log.Fatal(err)
-    }
+    self.MongoCollection.Find(nil).One(&raw_result)
 
     result, err := json.Marshal(raw_result.Value)
     if err != nil {
@@ -65,7 +49,23 @@ func (self Index) db_get() string {
 }
 
 func(self Index) db_set() string {
+    // var local_data [1][3][12][5]int
 
+    // for i := 0; i < 3; i++ {
+    //     for j := 0; j < 12; j++ {
+    //         for k := 0; k < 5; k++ {
+    //             local_data[0][i][j][k] = k + 1
+    //         }
+    //     }
+    // }
+
+    // data := self.Data{Value: local_data}
+
+    // err = collection.Insert(data)
+    // if err != nil {
+    //     log.Fatal(err)
+    // }
+    return "test"
 }
 
 
@@ -78,11 +78,11 @@ func (self Index) route(martini_app *martini.ClassicMartini) {
     })
 
     martini_app.Post("/api/v1/get", func(render render.Render) {
-        render.JSON(200, db_get())
+        render.JSON(200, self.db_get())
     })
 
     martini_app.Post("/api/v1/set", func(render render.Render) {
-        render.JSON(200, db_set())
+        render.JSON(200, self.db_set())
     })
 }
 
