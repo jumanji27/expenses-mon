@@ -60,6 +60,8 @@ func (self *Index) db_get() string {
 
 
 
+
+
     json_result, err := json.Marshal(db_record)
     if err != nil {
         log.Fatal(err)
