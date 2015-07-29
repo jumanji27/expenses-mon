@@ -58,6 +58,7 @@ func (self *Index) db_get() string {
     self.MongoCollection.Find(nil).All(&db_record)
 
 
+
     json_result, err := json.Marshal(db_record)
     if err != nil {
         log.Fatal(err)
