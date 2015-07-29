@@ -15,40 +15,60 @@ import (
     // "gopkg.in/mgo.v2/bson"
 )
 
+
 type Index struct {
     MongoCollection *mgo.Collection
-    Data
+    MongoSession *mgo.Session
+    DBRecord
+    API
+    APIWeek
 }
 
-type Data struct {
-    Value [1][3][12][5]int
+type DBRecord struct {
+    Date string
+    Value int
+    Comment string
+}
+
+type API struct {
+    Value [1][3][12][5]APIWeek
+}
+
+type APIWeek struct {
+    Value int
+    Comment string
 }
 
 
-func (self Index) db_init() {
+func (self *Index) db_init() {
     session, err := mgo.Dial("localhost:27017")
     if err != nil {
         log.Fatal(err)
     }
 
-    defer session.Close()
+    self.MongoSession = session
 
-    self.MongoCollection = session.DB("test").C("test")
+    self.MongoCollection = session.DB("test").C("money_mon")
 }
 
-func (self Index) db_get() string {
-    raw_result := Data{}
-    self.MongoCollection.Find(nil).One(&raw_result)
+func (self *Index) db_get() string {
+    defer self.MongoSession.Close()
 
-    result, err := json.Marshal(raw_result.Value)
+    db_record := []DBRecord{}
+    self.MongoCollection.Find(nil).All(&db_record)
+
+
+
+
+    json_result, err := json.Marshal(db_record)
     if err != nil {
         log.Fatal(err)
     }
 
-    return string(result)
+    return string(json_result)
 }
 
-func(self Index) db_set() string {
+func(self *Index) db_set() string {
     // var local_data [1][3][12][5]int
 
     // for i := 0; i < 3; i++ {
@@ -69,19 +89,19 @@ func(self Index) db_set() string {
 }
 
 
-func (self Index) route(martini_app *martini.ClassicMartini) {
-    martini_app.Get("/", func(render render.Render) {
+func (self *Index) route(app *martini.ClassicMartini) {
+    app.Get("/", func(render render.Render) {
         render.JSON(200, map[string]interface{}{
             "success": map[string]interface{}{"greeting": "Hello, I'm your API!"},
             "error": nil,
         })
     })
 
-    martini_app.Post("/api/v1/get", func(render render.Render) {
+    app.Post("/api/v1/get", func(render render.Render) {
         render.JSON(200, self.db_get())
     })
 
-    martini_app.Post("/api/v1/set", func(render render.Render) {
+    app.Post("/api/v1/set", func(render render.Render) {
         render.JSON(200, self.db_set())
     })
 }
@@ -92,9 +112,8 @@ func main() {
     martini_app.Use(render.Renderer())
 
     app := Index{}
+    app.db_init()
     app.route(martini_app)
-
-    db_init()
 
     fmt.Printf("App starting!\n")
 

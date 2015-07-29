@@ -1,3 +1,3 @@
 mongod --dbpath ~/mongo/
 
-go run index.go
+go run server/index.go
