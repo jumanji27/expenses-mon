@@ -4,6 +4,7 @@ package main
 import (
     "fmt"
     "log"
+    "time"
     // "reflect"
 
     "encoding/json"
@@ -19,22 +20,23 @@ import (
 type Index struct {
     MongoCollection *mgo.Collection
     MongoSession *mgo.Session
-    DBRecord
+    DBExpense
     API
     APIWeek
 }
 
-type DBRecord struct {
-    Date string
+type DBExpense struct {
+    Date time.Time
     Value int
     Comment string
 }
 
 type API struct {
-    Value [1][3][12][5]APIWeek
+    Value [1][][12][5]APIWeek
 }
 
 type APIWeek struct {
+    Week int
     Value int
     Comment string
 }
@@ -47,24 +49,29 @@ func (self *Index) db_init() {
     }
 
     self.MongoSession = session
-
     self.MongoCollection = session.DB("test").C("money_mon")
 }
 
 func (self *Index) db_get() string {
     defer self.MongoSession.Close()
 
-    db_record := []DBRecord{}
-    self.MongoCollection.Find(nil).All(&db_record)
+    db_expenses := []DBExpense{}
+    self.MongoCollection.Find(nil).All(&db_expenses)
 
+    // api_expenses := make([][][][]APIWeek, 4)
 
+    for i := 0; i < len(db_expenses); i++ {
+        year := db_expenses[i].Date.Year()
 
-    json_result, err := json.Marshal(db_record)
+        fmt.Println(year)
+    }
+
+    api_result, err := json.Marshal(db_expenses)
     if err != nil {
         log.Fatal(err)
     }
 
-    return string(json_result)
+    return string(api_result)
 }
 
 func(self *Index) db_set() string {
