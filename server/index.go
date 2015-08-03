@@ -58,13 +58,39 @@ func (self *Index) db_get() string {
     db_expenses := []DBExpense{}
     self.MongoCollection.Find(nil).All(&db_expenses)
 
-    // api_expenses := make([][][][]APIWeek, 4)
+    api_expenses_years := make([][]APIWeek, 2) // ???
+    api_expenses_weeks := []APIWeek{}          // ???
 
-    for i := 0; i < len(db_expenses); i++ {
-        year := db_expenses[i].Date.Year()
+    year := db_expenses[0].Date.Year()
+    year_itr := 0
 
-        fmt.Println(year)
+    for db_expense_itr := 0; db_expense_itr < len(db_expenses); db_expense_itr++ {
+        if db_expense_itr == 0 {
+            api_expenses_years[db_expense_itr] = api_expenses_weeks
+        } else if db_expenses[db_expense_itr].Date.Year() != year {
+            year = db_expenses[db_expense_itr].Date.Year()
+            year_itr++
+            api_expenses_years[year_itr] = api_expenses_weeks
+        }
     }
+
+    // REFACTOR AND DEBUG
+    for year_itr := 0; year_itr < len(api_expenses_years); year_itr++ {
+        fmt.Println(year_itr)
+
+        // for month_itr := 1; month_itr < 12; month_itr++ {
+        //     for db_expense_itr := 0; db_expense_itr < len(db_expenses); db_expense_itr++ {
+        //         fmt.Println(api_expenses)
+
+        //         // if db_expenses[db_expense_itr].Date.Year() == api_expenses[year_itr] && int(db_expenses[db_expense_itr].Date.Month()) == month_itr && db_expenses[db_expense_itr].Comment {
+        //         //     api_expenses[year_itr][month_itr] = APIWeek{1 ,db_expenses[db_expense_itr].Value, db_expenses[db_expense_itr].Comment}
+        //         // } else if db_expenses[db_expense_itr].Date.Year() == api_expenses[year_itr] && int(db_expenses[db_expense_itr].Date.Month()) == month_itr {
+        //         //     api_expenses[year_itr][month_itr] = APIWeek{1 ,db_expenses[db_expense_itr].Value}
+        //         // }
+        //     }
+        // }
+    }
+
 
     api_result, err := json.Marshal(db_expenses)
     if err != nil {
