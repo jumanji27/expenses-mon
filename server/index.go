@@ -21,7 +21,6 @@ type Index struct {
     MongoCollection *mgo.Collection
     MongoSession *mgo.Session
     DBExpense
-    API
     APIWeek
 }
 
@@ -29,10 +28,6 @@ type DBExpense struct {
     Date time.Time
     Value int
     Comment string
-}
-
-type API struct {
-    Value [1][][12][5]APIWeek
 }
 
 type APIWeek struct {
@@ -58,39 +53,39 @@ func (self *Index) db_get() string {
     db_expenses := []DBExpense{}
     self.MongoCollection.Find(nil).All(&db_expenses)
 
-    api_expenses_years := make([][]APIWeek, 2) // ???
-    api_expenses_weeks := []APIWeek{}          // ???
+    api_expenses := [][][]APIWeek{}
 
     year := db_expenses[0].Date.Year()
     year_itr := 0
 
     for db_expense_itr := 0; db_expense_itr < len(db_expenses); db_expense_itr++ {
         if db_expense_itr == 0 {
-            api_expenses_years[db_expense_itr] = api_expenses_weeks
+            api_expenses = append(api_expenses, [][]APIWeek{})
+            // NEXT LOOP HERE
         } else if db_expenses[db_expense_itr].Date.Year() != year {
             year = db_expenses[db_expense_itr].Date.Year()
             year_itr++
-            api_expenses_years[year_itr] = api_expenses_weeks
+            api_expenses = append(api_expenses, [][]APIWeek{})
+            // NEXT LOOP HERE
         }
     }
 
-    // REFACTOR AND DEBUG
-    for year_itr := 0; year_itr < len(api_expenses_years); year_itr++ {
-        fmt.Println(year_itr)
+    for year_itr := 0; year_itr < len(api_expenses); year_itr++ {
+        for month_itr := 0; month_itr < 12; month_itr++ { // 12 to const
+            api_expenses[year_itr] = append(api_expenses[year_itr], []APIWeek{})
 
-        // for month_itr := 1; month_itr < 12; month_itr++ {
-        //     for db_expense_itr := 0; db_expense_itr < len(db_expenses); db_expense_itr++ {
-        //         fmt.Println(api_expenses)
+            for db_expense_itr := 0; db_expense_itr < len(db_expenses); db_expense_itr++ {
+                if int(db_expenses[db_expense_itr].Date.Month()) == month_itr + 1 {
+                    api_expenses[year_itr][month_itr] = []APIWeek{
+                        APIWeek{1, db_expenses[db_expense_itr].Value, db_expenses[db_expense_itr].Comment},
+                    }
+                }
 
-        //         // if db_expenses[db_expense_itr].Date.Year() == api_expenses[year_itr] && int(db_expenses[db_expense_itr].Date.Month()) == month_itr && db_expenses[db_expense_itr].Comment {
-        //         //     api_expenses[year_itr][month_itr] = APIWeek{1 ,db_expenses[db_expense_itr].Value, db_expenses[db_expense_itr].Comment}
-        //         // } else if db_expenses[db_expense_itr].Date.Year() == api_expenses[year_itr] && int(db_expenses[db_expense_itr].Date.Month()) == month_itr {
-        //         //     api_expenses[year_itr][month_itr] = APIWeek{1 ,db_expenses[db_expense_itr].Value}
-        //         // }
-        //     }
-        // }
+            }
+        }
     }
 
+    fmt.Println(api_expenses)
 
     api_result, err := json.Marshal(db_expenses)
     if err != nil {
@@ -146,6 +141,10 @@ func main() {
     app := Index{}
     app.db_init()
     app.route(martini_app)
+
+
+    app.db_get()
+
 
     fmt.Printf("App starting!\n")
 
