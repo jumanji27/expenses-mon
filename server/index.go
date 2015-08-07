@@ -61,38 +61,51 @@ func (self *Index) db_get() string {
     for db_expense_itr := 0; db_expense_itr < len(db_expenses); db_expense_itr++ {
         if db_expense_itr == 0 {
             api_expenses = append(api_expenses, [][]APIWeek{})
-            // NEXT LOOP HERE
+            self.db_sort(db_expenses, api_expenses, year_itr)
         } else if db_expenses[db_expense_itr].Date.Year() != year {
             year = db_expenses[db_expense_itr].Date.Year()
             year_itr++
             api_expenses = append(api_expenses, [][]APIWeek{})
-            // NEXT LOOP HERE
+            self.db_sort(db_expenses, api_expenses, year_itr)
         }
     }
 
-    for year_itr := 0; year_itr < len(api_expenses); year_itr++ {
-        for month_itr := 0; month_itr < 12; month_itr++ { // 12 to const
-            api_expenses[year_itr] = append(api_expenses[year_itr], []APIWeek{})
-
-            for db_expense_itr := 0; db_expense_itr < len(db_expenses); db_expense_itr++ {
-                if int(db_expenses[db_expense_itr].Date.Month()) == month_itr + 1 {
-                    api_expenses[year_itr][month_itr] = []APIWeek{
-                        APIWeek{1, db_expenses[db_expense_itr].Value, db_expenses[db_expense_itr].Comment},
-                    }
-                }
-
-            }
-        }
-    }
-
-    fmt.Println(api_expenses)
-
-    api_result, err := json.Marshal(db_expenses)
+    api_result, err := json.Marshal(api_expenses)
     if err != nil {
         log.Fatal(err)
     }
 
     return string(api_result)
+}
+
+func(self *Index) db_sort(db_expenses []DBExpense, api_expenses [][][]APIWeek, parent_year_itr int) {
+    const month_count = 12
+
+    for year_itr := 0; year_itr < len(api_expenses); year_itr++ {
+        for month_itr := 0; month_itr < month_count; month_itr++ {
+            api_expenses[year_itr] = append(api_expenses[year_itr], []APIWeek{})
+
+            for db_expense_itr := 0; db_expense_itr < len(db_expenses); db_expense_itr++ {
+                if parent_year_itr == year_itr && int(db_expenses[db_expense_itr].Date.Month()) == month_itr + 1 {
+                    fmt.Println(db_expenses[db_expense_itr].Date) // WTF
+                    // fmt.Println(year_itr)
+                    // fmt.Println("-------")
+
+
+
+                    // fmt.Println(year_itr)
+                    // fmt.Println(month_itr)
+                    // fmt.Println("-----")
+
+                    api_expenses[year_itr][month_itr] = []APIWeek{
+                        APIWeek{1, db_expenses[db_expense_itr].Value, db_expenses[db_expense_itr].Comment},
+                    }
+                }
+            }
+        }
+    }
+
+    // fmt.Println(api_expenses)
 }
 
 func(self *Index) db_set() string {
