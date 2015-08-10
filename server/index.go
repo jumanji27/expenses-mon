@@ -55,20 +55,32 @@ func (self *Index) db_get() string {
 
     api_expenses := [][][]APIWeek{}
 
-    year := db_expenses[0].Date.Year()
+    first_year := db_expenses[0].Date.Year()
+    year_for_itr := first_year
     year_itr := 0
 
+    const month_count = 12
+
     for db_expense_itr := 0; db_expense_itr < len(db_expenses); db_expense_itr++ {
-        if db_expense_itr == 0 {
+        if db_expense_itr == 0 || db_expenses[db_expense_itr].Date.Year() != year_for_itr {
             api_expenses = append(api_expenses, [][]APIWeek{})
-            self.db_sort(db_expenses, api_expenses, year_itr)
-        } else if db_expenses[db_expense_itr].Date.Year() != year {
-            year = db_expenses[db_expense_itr].Date.Year()
-            year_itr++
-            api_expenses = append(api_expenses, [][]APIWeek{})
-            self.db_sort(db_expenses, api_expenses, year_itr)
+
+            if db_expenses[db_expense_itr].Date.Year() != year_for_itr {
+                year_for_itr++
+                year_itr++
+            }
+
+            for month_itr := 0; month_itr < month_count; month_itr++ {
+                fmt.Println(api_expenses)
+                fmt.Println(year_itr)
+                // api_expenses[year_itr][month_itr] = []APIWeek{
+                //     APIWeek{1, db_expenses[db_expense_itr].Value, db_expenses[db_expense_itr].Comment},
+                // }
+            }
         }
     }
+
+    fmt.Println(api_expenses)
 
     api_result, err := json.Marshal(api_expenses)
     if err != nil {
@@ -76,36 +88,6 @@ func (self *Index) db_get() string {
     }
 
     return string(api_result)
-}
-
-func(self *Index) db_sort(db_expenses []DBExpense, api_expenses [][][]APIWeek, parent_year_itr int) {
-    const month_count = 12
-
-    for year_itr := 0; year_itr < len(api_expenses); year_itr++ {
-        for month_itr := 0; month_itr < month_count; month_itr++ {
-            api_expenses[year_itr] = append(api_expenses[year_itr], []APIWeek{})
-
-            for db_expense_itr := 0; db_expense_itr < len(db_expenses); db_expense_itr++ {
-                if parent_year_itr == year_itr && int(db_expenses[db_expense_itr].Date.Month()) == month_itr + 1 {
-                    fmt.Println(db_expenses[db_expense_itr].Date) // WTF
-                    // fmt.Println(year_itr)
-                    // fmt.Println("-------")
-
-
-
-                    // fmt.Println(year_itr)
-                    // fmt.Println(month_itr)
-                    // fmt.Println("-----")
-
-                    api_expenses[year_itr][month_itr] = []APIWeek{
-                        APIWeek{1, db_expenses[db_expense_itr].Value, db_expenses[db_expense_itr].Comment},
-                    }
-                }
-            }
-        }
-    }
-
-    // fmt.Println(api_expenses)
 }
 
 func(self *Index) db_set() string {
