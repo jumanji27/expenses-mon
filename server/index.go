@@ -69,14 +69,15 @@ func (self *Index) db_get() string {
                 year_for_itr++
                 year_itr++
             }
+        }
 
-            for month_itr := 0; month_itr < month_count; month_itr++ {
-                fmt.Println(api_expenses)
-                fmt.Println(year_itr)
-                // api_expenses[year_itr][month_itr] = []APIWeek{
-                //     APIWeek{1, db_expenses[db_expense_itr].Value, db_expenses[db_expense_itr].Comment},
-                // }
-            }
+        for month_itr := 0; month_itr < month_count; month_itr++ {
+            fmt.Println(api_expenses)
+            fmt.Println(year_itr)
+            fmt.Println(db_expenses[db_expense_itr].Comment)
+            // api_expenses[year_itr][month_itr] = []APIWeek{
+            //     APIWeek{1, db_expenses[db_expense_itr].Value, db_expenses[db_expense_itr].Comment},
+            // }
         }
     }
 
