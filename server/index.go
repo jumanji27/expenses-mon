@@ -13,7 +13,6 @@ import (
     "github.com/martini-contrib/render"
 
     "gopkg.in/mgo.v2"
-    // "gopkg.in/mgo.v2/bson"
 )
 
 
@@ -48,8 +47,6 @@ type APIWeek struct {
 }
 
 func (self *Index) db_get() string {
-    defer self.MongoSession.Close()
-
     db_expenses := []DBExpense{}
     self.MongoCollection.Find(nil).All(&db_expenses)
 
@@ -73,9 +70,15 @@ func (self *Index) db_get() string {
             api_expenses_month = []APIWeek{}
         }
 
+        week_number := db_expenses[db_expense_itr].Date.Day() / 7
+
+        if week_number == 0 {
+            week_number = 1
+        }
+
         api_expenses_month = append(
             api_expenses_month,
-            APIWeek{1, db_expenses[db_expense_itr].Value,db_expenses[db_expense_itr].Comment}, // TODO: 1 — hardcode
+            APIWeek{week_number, db_expenses[db_expense_itr].Value, db_expenses[db_expense_itr].Comment},
         )
 
         current_loop_month = db_expenses[db_expense_itr].Date.Month()
@@ -117,11 +120,15 @@ func(self *Index) db_set() string {
 
 
 func (self *Index) route(app *martini.ClassicMartini) {
+    const (
+        http_success = 200
+    )
+
     app.Get(
         "/",
         func(render render.Render) {
             render.JSON(
-                200,
+                http_success,
                 map[string]interface{}{
                     "success": map[string]interface{}{"greeting": "Hello, I'm your API!"},
                     "error": nil,
@@ -130,17 +137,33 @@ func (self *Index) route(app *martini.ClassicMartini) {
         },
     )
 
-    app.Post( // TODO: Second req — fail, not idempotent?
-        "/api/v1/get",
+    const api_base_url = "/api/v1/"
+
+    api_url := api_base_url
+    method := "get"
+    api_url += method
+
+    app.Get( // TMP
+        api_url,
         func(render render.Render) {
-            render.JSON(200, self.db_get())
+            render.JSON(
+                http_success,
+                map[string]interface{}{
+                    "success": self.db_get(), // TMP
+                    "error": nil,
+                },
+            )
         },
     )
 
+    api_url = api_base_url
+    method = "set"
+    api_url += method
+
     app.Post(
-        "/api/v1/set",
+        api_url,
         func(render render.Render) {
-            render.JSON(200, self.db_set())
+            render.JSON(http_success, self.db_set())
         },
     )
 }
