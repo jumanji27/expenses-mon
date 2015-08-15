@@ -7,8 +7,6 @@ import (
     "time"
     // "reflect"
 
-    "encoding/json"
-
     "github.com/go-martini/martini"
     "github.com/martini-contrib/render"
 
@@ -20,7 +18,6 @@ type Index struct {
     MongoCollection *mgo.Collection
     MongoSession *mgo.Session
     DBExpense
-    APIWeek
 }
 
 
@@ -40,19 +37,13 @@ type DBExpense struct {
     Comment string
 }
 
-type APIWeek struct {
-    Week int
-    Value int
-    Comment string
-}
-
-func (self *Index) db_get() string {
+func (self *Index) db_get() map[string]interface{} {
     db_expenses := []DBExpense{}
     self.MongoCollection.Find(nil).All(&db_expenses)
 
-    api_expenses_month := []APIWeek{}
-    api_expenses_year := [][]APIWeek{}
-    api_expenses := [][][]APIWeek{}
+    api_expenses_month := []map[string]interface{}{}
+    api_expenses_year := [][]map[string]interface{}{}
+    api_expenses := [][][]map[string]interface{}{}
 
     current_loop_month := db_expenses[0].Date.Month()
     current_loop_year := db_expenses[0].Date.Year()
@@ -64,10 +55,10 @@ func (self *Index) db_get() string {
             if db_expenses[db_expense_itr].Date.Year() != current_loop_year {
                 api_expenses = append(api_expenses, api_expenses_year)
 
-                api_expenses_year = [][]APIWeek{}
+                api_expenses_year = [][]map[string]interface{}{}
             }
 
-            api_expenses_month = []APIWeek{}
+            api_expenses_month = []map[string]interface{}{}
         }
 
         week_number := db_expenses[db_expense_itr].Date.Day() / 7
@@ -76,10 +67,22 @@ func (self *Index) db_get() string {
             week_number = 1
         }
 
-        api_expenses_month = append(
-            api_expenses_month,
-            APIWeek{week_number, db_expenses[db_expense_itr].Value, db_expenses[db_expense_itr].Comment},
-        )
+        api_expense := map[string]interface{}{}
+
+        if len(db_expenses[db_expense_itr].Comment) > 0 {
+            api_expense = map[string]interface{}{
+                "week": week_number,
+                "value": db_expenses[db_expense_itr].Value,
+                "comment": db_expenses[db_expense_itr].Comment,
+            }
+        } else {
+            api_expense = map[string]interface{}{
+                "week": week_number,
+                "value": db_expenses[db_expense_itr].Value,
+            }
+        }
+
+        api_expenses_month = append(api_expenses_month, api_expense)
 
         current_loop_month = db_expenses[db_expense_itr].Date.Month()
         current_loop_year = db_expenses[db_expense_itr].Date.Year()
@@ -90,25 +93,13 @@ func (self *Index) db_get() string {
         }
     }
 
-    api_result, err := json.Marshal(api_expenses)
-    if err != nil {
-        log.Fatal(err)
+    return map[string]interface{}{
+        "success": api_expenses,
+        "error": nil,
     }
-
-    return string(api_result)
 }
 
 func(self *Index) db_set() string {
-    // var local_data [1][3][12][5]int
-
-    // for i := 0; i < 3; i++ {
-    //     for j := 0; j < 12; j++ {
-    //         for k := 0; k < 5; k++ {
-    //             local_data[0][i][j][k] = k + 1
-    //         }
-    //     }
-    // }
-
     // data := self.Data{Value: local_data}
 
     // err = collection.Insert(data)
@@ -140,25 +131,19 @@ func (self *Index) route(app *martini.ClassicMartini) {
     const api_base_url = "/api/v1/"
 
     api_url := api_base_url
-    method := "get"
-    api_url += method
+    handler := "get"
+    api_url += handler
 
-    app.Get( // TMP
+    app.Post(
         api_url,
         func(render render.Render) {
-            render.JSON(
-                http_success,
-                map[string]interface{}{
-                    "success": self.db_get(), // TMP
-                    "error": nil,
-                },
-            )
+            render.JSON(http_success, self.db_get())
         },
     )
 
     api_url = api_base_url
-    method = "set"
-    api_url += method
+    handler = "set"
+    api_url += handler
 
     app.Post(
         api_url,
