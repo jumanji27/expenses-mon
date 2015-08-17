@@ -33,12 +33,12 @@ func (self *Main) Init(app *martini.ClassicMartini) {
 
     const api_base_url = "/api/v1/"
 
+    model := model.Main{}
+    model.Init()
+
     api_url := api_base_url
     handler := "get"
     api_url += handler
-
-    model := model.Main{}
-    model.Init()
 
     app.Post(
         api_url,
