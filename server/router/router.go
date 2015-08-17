@@ -4,13 +4,16 @@ import (
     // "fmt"
     // "reflect"
 
+    "github.com/go-martini/martini"
+    "github.com/martini-contrib/render"
+
     "money_mon/server/model"
 )
 
 
 type Main struct {}
 
-func (self *Main) init(app *martini.ClassicMartini) {
+func (self *Main) Init(app *martini.ClassicMartini) {
     const (
         http_success = 200
     )
@@ -34,10 +37,13 @@ func (self *Main) init(app *martini.ClassicMartini) {
     handler := "get"
     api_url += handler
 
+    model := model.Main{}
+    model.Init()
+
     app.Post(
         api_url,
         func(render render.Render) {
-            render.JSON(http_success, model.get())
+            render.JSON(http_success, model.Get())
         },
     )
 
@@ -48,7 +54,7 @@ func (self *Main) init(app *martini.ClassicMartini) {
     app.Post(
         api_url,
         func(render render.Render) {
-            render.JSON(http_success, model.set())
+            render.JSON(http_success, model.Set())
         },
     )
 }

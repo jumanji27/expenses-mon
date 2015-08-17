@@ -1,12 +1,13 @@
 package model
 
 import (
-    // "fmt"
+    "fmt"
+    // "reflect"
     "log"
     "time"
-    // "reflect"
 
     "gopkg.in/mgo.v2"
+    // "gopkg.in/mgo.v2/bson"
 )
 
 
@@ -16,7 +17,7 @@ type Main struct {
     Expense
 }
 
-func (self *Main) init() {
+func (self *Main) Init() {
     session, err := mgo.Dial("localhost:27017")
     if err != nil {
         log.Fatal(err)
@@ -24,6 +25,8 @@ func (self *Main) init() {
 
     self.MongoSession = session
     self.MongoCollection = session.DB("test").C("money_mon")
+
+    fmt.Printf("Mongo ready\n")
 }
 
 type Expense struct {
@@ -32,7 +35,7 @@ type Expense struct {
     Comment string
 }
 
-func (self *Main) get() map[string]interface{} {
+func (self *Main) Get() map[string]interface{} {
     db_expenses := []Expense{}
     self.MongoCollection.Find(nil).All(&db_expenses)
 
@@ -94,7 +97,7 @@ func (self *Main) get() map[string]interface{} {
     }
 }
 
-func(self *Main) set() string {
+func (self *Main) Set() string {
     // data := self.Data{Value: local_data}
 
     // err = collection.Insert(data)
