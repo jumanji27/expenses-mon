@@ -1,27 +1,22 @@
-package main
-
+package model
 
 import (
-    "fmt"
+    // "fmt"
     "log"
     "time"
     // "reflect"
-
-    "github.com/go-martini/martini"
-    "github.com/martini-contrib/render"
 
     "gopkg.in/mgo.v2"
 )
 
 
-type Index struct {
+type Main struct {
     MongoCollection *mgo.Collection
     MongoSession *mgo.Session
-    DBExpense
+    Expense
 }
 
-
-func (self *Index) db_init() {
+func (self *Main) init() {
     session, err := mgo.Dial("localhost:27017")
     if err != nil {
         log.Fatal(err)
@@ -31,14 +26,14 @@ func (self *Index) db_init() {
     self.MongoCollection = session.DB("test").C("money_mon")
 }
 
-type DBExpense struct {
+type Expense struct {
     Date time.Time
     Value int
     Comment string
 }
 
-func (self *Index) db_get() map[string]interface{} {
-    db_expenses := []DBExpense{}
+func (self *Main) get() map[string]interface{} {
+    db_expenses := []Expense{}
     self.MongoCollection.Find(nil).All(&db_expenses)
 
     api_expenses_month := []map[string]interface{}{}
@@ -99,7 +94,7 @@ func (self *Index) db_get() map[string]interface{} {
     }
 }
 
-func(self *Index) db_set() string {
+func(self *Main) set() string {
     // data := self.Data{Value: local_data}
 
     // err = collection.Insert(data)
@@ -107,62 +102,4 @@ func(self *Index) db_set() string {
     //     log.Fatal(err)
     // }
     return "test"
-}
-
-
-func (self *Index) route(app *martini.ClassicMartini) {
-    const (
-        http_success = 200
-    )
-
-    app.Get(
-        "/",
-        func(render render.Render) {
-            render.JSON(
-                http_success,
-                map[string]interface{}{
-                    "success": map[string]interface{}{"greeting": "Hello, I'm your API!"},
-                    "error": nil,
-                },
-            )
-        },
-    )
-
-    const api_base_url = "/api/v1/"
-
-    api_url := api_base_url
-    handler := "get"
-    api_url += handler
-
-    app.Post(
-        api_url,
-        func(render render.Render) {
-            render.JSON(http_success, self.db_get())
-        },
-    )
-
-    api_url = api_base_url
-    handler = "set"
-    api_url += handler
-
-    app.Post(
-        api_url,
-        func(render render.Render) {
-            render.JSON(http_success, self.db_set())
-        },
-    )
-}
-
-
-func main() {
-    martini_app := martini.Classic()
-    martini_app.Use(render.Renderer())
-
-    app := Index{}
-    app.db_init()
-    app.route(martini_app)
-
-    fmt.Printf("App starting!\n")
-
-    martini_app.Run()
 }
