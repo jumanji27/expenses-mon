@@ -3,6 +3,7 @@ package router
 import (
     // "fmt"
     // "reflect"
+    "net/http"
 
     "github.com/go-martini/martini"
     "github.com/martini-contrib/render"
@@ -53,8 +54,8 @@ func (self *Main) Init(app *martini.ClassicMartini) {
 
     app.Post(
         api_url,
-        func(render render.Render) {
-            render.JSON(http_success, model.Set())
+        func(res *http.Request, render render.Render) {
+            render.JSON(http_success, model.Set(res))
         },
     )
 }

@@ -5,6 +5,10 @@ import (
     // "reflect"
     "log"
     "time"
+    "net/http"
+    "io/ioutil"
+    "encoding/json"
+    "strings"
 
     "gopkg.in/mgo.v2"
 )
@@ -30,8 +34,12 @@ func (self *Main) Init() {
 
 type Expense struct {
     Date time.Time
-    Value int
-    Comment string
+    ExpensePlain
+}
+
+type ExpensePlain struct {
+    Value int `json:"value"`
+    Comment string `json:"comment"`
 }
 
 func (self *Main) Get() map[string]interface{} {
@@ -96,12 +104,29 @@ func (self *Main) Get() map[string]interface{} {
     }
 }
 
-func (self *Main) Set() string {
-    // data := self.Data{Value: local_data}
+func (self *Main) Set(res *http.Request) map[string]interface{} {
+    body_uint8, err := ioutil.ReadAll(res.Body)
+    if err != nil {
+        fmt.Println(err)
+    }
 
-    // err = collection.Insert(data)
-    // if err != nil {
-    //     log.Fatal(err)
-    // }
-    return "test"
+    body := strings.Replace(string(body_uint8), "'", "\"", -1)
+
+    db_expense_plain := ExpensePlain{}
+
+    err = json.Unmarshal([]byte(body), &db_expense_plain)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    // curl -i -H "Accept: application/json" -H "Content-Type: application/json" -X POST -d "{'value':1, 'comment': 'al'}" http://localhost:3000/api/v1/set
+
+    fmt.Println(db_expense_plain)
+
+    // self.MongoCollection.Insert(&Expense{time.Now(), 1, "Comment"})
+
+    return map[string]interface{}{
+        "success": true,
+        "error": nil,
+    }
 }
