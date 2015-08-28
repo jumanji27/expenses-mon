@@ -19,7 +19,8 @@ type Main struct {
     Helpers helpers.Main
     MongoCollection *mgo.Collection
     MongoSession *mgo.Session
-    Expense
+    DBExpense
+    ReqExpense
 }
 
 const (
@@ -41,18 +42,14 @@ func (self *Main) Init() {
     self.Helpers.LogSimpleMessage("Mongo ready")
 }
 
-type Expense struct {
+type DBExpense struct {
     Date time.Time
-    ExpensePlain
-}
-
-type ExpensePlain struct {
-    Value int `json:"value"`
-    Comment string `json:"comment"`
+    Value int
+    Comment string
 }
 
 func (self *Main) Get() map[string]interface{} {
-    db_expenses := []Expense{}
+    db_expenses := []DBExpense{}
     self.MongoCollection.Find(nil).All(&db_expenses)
 
     api_expenses_month := []map[string]interface{}{}
@@ -113,6 +110,11 @@ func (self *Main) Get() map[string]interface{} {
     }
 }
 
+type ReqExpense struct {
+    Value int `json:"value"`
+    Comment string `json:"comment"`
+}
+
 func (self *Main) Set(res *http.Request) map[string]interface{} {
     body_uint8, err := ioutil.ReadAll(res.Body)
     if err != nil {
@@ -121,22 +123,28 @@ func (self *Main) Set(res *http.Request) map[string]interface{} {
 
     body := strings.Replace(string(body_uint8), "'", "\"", -1)
 
-    db_expense_plain := ExpensePlain{}
+    db_expense := ReqExpense{}
 
-    err = json.Unmarshal([]byte(body), &db_expense_plain)
+    err = json.Unmarshal([]byte(body), &db_expense)
     if err != nil {
         self.Helpers.LogError(err)
     }
 
-    self.MongoCollection.Insert(
-        &Expense{time.Now(), db_expense_plain},
-    )
+    if len(db_expense.Comment) > 0 {
+        self.MongoCollection.Insert(
+            &DBExpense{time.Now(), db_expense.Value, db_expense.Comment},
+        )
+    } else {
+        self.MongoCollection.Insert(
+            &DBExpense{time.Now(), db_expense.Value},
+        )
+    }
 
-    // No Generics T_T
+    // No generics for common method T_T
     fmt.Printf(
         "%s | Added to DB: %s\n",
         time.Now().Format(LogTimeFormat),
-        db_expense_plain,
+        db_expense,
     )
 
     return map[string]interface{}{
