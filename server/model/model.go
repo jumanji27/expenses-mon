@@ -2,34 +2,43 @@ package model
 
 import (
     "fmt"
-    // "reflect"
-    "log"
     "time"
     "net/http"
     "io/ioutil"
     "encoding/json"
     "strings"
+    // "reflect"
 
     "gopkg.in/mgo.v2"
+
+    "money_mon/server/helpers"
 )
 
 
 type Main struct {
+    Helpers helpers.Main
     MongoCollection *mgo.Collection
     MongoSession *mgo.Session
     Expense
 }
 
+const (
+    LogTimeFormat = "02 Jan 2006 15:04:05"
+)
+
+
 func (self *Main) Init() {
+    self.Helpers = helpers.Main{}
+
     session, err := mgo.Dial("localhost:27017")
     if err != nil {
-        log.Fatal(err)
+        self.Helpers.LogError(err)
     }
 
     self.MongoSession = session
     self.MongoCollection = session.DB("test").C("money_mon")
 
-    fmt.Printf("Mongo ready\n")
+    self.Helpers.LogSimpleMessage("Mongo ready")
 }
 
 type Expense struct {
@@ -107,7 +116,7 @@ func (self *Main) Get() map[string]interface{} {
 func (self *Main) Set(res *http.Request) map[string]interface{} {
     body_uint8, err := ioutil.ReadAll(res.Body)
     if err != nil {
-        fmt.Println(err)
+        self.Helpers.LogError(err)
     }
 
     body := strings.Replace(string(body_uint8), "'", "\"", -1)
@@ -116,14 +125,19 @@ func (self *Main) Set(res *http.Request) map[string]interface{} {
 
     err = json.Unmarshal([]byte(body), &db_expense_plain)
     if err != nil {
-        log.Fatal(err)
+        self.Helpers.LogError(err)
     }
 
-    // curl -i -H "Accept: application/json" -H "Content-Type: application/json" -X POST -d "{'value':1, 'comment': 'al'}" http://localhost:3000/api/v1/set
+    self.MongoCollection.Insert(
+        &Expense{time.Now(), db_expense_plain},
+    )
 
-    fmt.Println(db_expense_plain)
-
-    // self.MongoCollection.Insert(&Expense{time.Now(), 1, "Comment"})
+    // No Generics T_T
+    fmt.Printf(
+        "%s | Added to DB: %s\n",
+        time.Now().Format(LogTimeFormat),
+        db_expense_plain,
+    )
 
     return map[string]interface{}{
         "success": true,

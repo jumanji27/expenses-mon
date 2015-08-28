@@ -14,6 +14,7 @@ import (
 
 type Main struct {}
 
+
 func (self *Main) Init(app *martini.ClassicMartini) {
     const (
         http_success = 200

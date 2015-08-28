@@ -1,13 +1,13 @@
 package main
 
 import (
-    "fmt"
     // "reflect"
 
     "github.com/go-martini/martini"
     "github.com/martini-contrib/render"
 
     "money_mon/server/router"
+    "money_mon/server/helpers"
 )
 
 
@@ -18,7 +18,8 @@ func main() {
     router := router.Main{}
     router.Init(martini_app)
 
-    fmt.Printf("App starting!\n")
+    helpers := helpers.Main{}
+    helpers.LogSimpleMessage("App starting!")
 
     martini_app.Run()
 }
