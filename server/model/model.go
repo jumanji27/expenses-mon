@@ -20,6 +20,7 @@ type Main struct {
     MongoCollection *mgo.Collection
     MongoSession *mgo.Session
     DBExpense
+    DBExpenseComment
     ReqExpense
 }
 
@@ -45,11 +46,16 @@ func (self *Main) Init() {
 type DBExpense struct {
     Date time.Time
     Value int
+}
+
+type DBExpenseComment struct {
+    Date time.Time
+    Value int
     Comment string
 }
 
 func (self *Main) Get() map[string]interface{} {
-    db_expenses := []DBExpense{}
+    db_expenses := []DBExpenseComment{}
     self.MongoCollection.Find(nil).All(&db_expenses)
 
     api_expenses_month := []map[string]interface{}{}
@@ -132,7 +138,7 @@ func (self *Main) Set(res *http.Request) map[string]interface{} {
 
     if len(db_expense.Comment) > 0 {
         self.MongoCollection.Insert(
-            &DBExpense{time.Now(), db_expense.Value, db_expense.Comment},
+            &DBExpenseComment{time.Now(), db_expense.Value, db_expense.Comment},
         )
     } else {
         self.MongoCollection.Insert(
