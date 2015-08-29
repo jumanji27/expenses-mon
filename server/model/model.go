@@ -65,6 +65,9 @@ func (self *Main) Get() map[string]interface{} {
     current_loop_month := db_expenses[0].Date.Month()
     current_loop_year := db_expenses[0].Date.Year()
 
+    var full_year_loop bool
+
+    // Loop is depended from DB struct (year must begin from january)
     for db_expense_itr := 0; db_expense_itr < len(db_expenses); db_expense_itr++ {
         if db_expenses[db_expense_itr].Date.Month() != current_loop_month {
             api_expenses_year = append(api_expenses_year, api_expenses_month)
@@ -76,6 +79,7 @@ func (self *Main) Get() map[string]interface{} {
             }
 
             api_expenses_month = []map[string]interface{}{}
+            full_year_loop = true
         }
 
         week_number := db_expenses[db_expense_itr].Date.Day() / 7
@@ -106,6 +110,10 @@ func (self *Main) Get() map[string]interface{} {
 
         // Last iteration
         if db_expense_itr + 1 == len(db_expenses) {
+            if full_year_loop != true {
+                api_expenses_year = append(api_expenses_year, api_expenses_month)
+            }
+
             api_expenses = append(api_expenses, api_expenses_year)
         }
     }
@@ -124,7 +132,7 @@ type ReqExpense struct {
 func (self *Main) Set(res *http.Request) map[string]interface{} {
     body_uint8, err := ioutil.ReadAll(res.Body)
     if err != nil {
-        self.Helpers.LogError(err)
+        self.Helpers.LogWarning(err)
     }
 
     body := strings.Replace(string(body_uint8), "'", "\"", -1)
@@ -133,28 +141,37 @@ func (self *Main) Set(res *http.Request) map[string]interface{} {
 
     err = json.Unmarshal([]byte(body), &db_expense)
     if err != nil {
-        self.Helpers.LogError(err)
+        self.Helpers.LogWarning(err)
     }
 
-    if len(db_expense.Comment) > 0 {
-        self.MongoCollection.Insert(
-            &DBExpenseComment{time.Now(), db_expense.Value, db_expense.Comment},
+    if db_expense.Value > 0 {
+        if len(db_expense.Comment) > 0 {
+            self.MongoCollection.Insert(
+                &DBExpenseComment{time.Now(), db_expense.Value, db_expense.Comment},
+            )
+        } else {
+            self.MongoCollection.Insert(
+                &DBExpense{time.Now(), db_expense.Value},
+            )
+        }
+
+        // No generics for common method T_T
+        fmt.Printf(
+            "%s | Added to DB: %s\n",
+            time.Now().Format(LogTimeFormat),
+            db_expense,
         )
+
+        return map[string]interface{}{
+            "success": true,
+            "error": nil,
+        }
     } else {
-        self.MongoCollection.Insert(
-            &DBExpense{time.Now(), db_expense.Value},
-        )
-    }
+        self.Helpers.LogSimpleMessage("Failed request, validation error")
 
-    // No generics for common method T_T
-    fmt.Printf(
-        "%s | Added to DB: %s\n",
-        time.Now().Format(LogTimeFormat),
-        db_expense,
-    )
-
-    return map[string]interface{}{
-        "success": true,
-        "error": nil,
+        return map[string]interface{}{
+            "success": nil,
+            "error": "Data validation error",
+        }
     }
 }
