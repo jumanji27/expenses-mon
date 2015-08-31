@@ -1,0 +1,4 @@
+extends ../../layouts/main/index.jade
+
+block content
+  include banner/index.jade

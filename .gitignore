@@ -1,1 +1,8 @@
 .DS_Store
+
+client/build/bower_components
+client/build/node_modules
+
+client/public/img
+client/public/index.css
+client/public/index.js

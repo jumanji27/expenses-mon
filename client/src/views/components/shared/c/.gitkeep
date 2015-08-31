@@ -1,0 +1,10 @@
+.button {
+  float: left;
+  color: #2f2f2f;
+  line-height: 28px;
+  text-transform: uppercase;
+  cursor: pointer;
+  border: 2px solid #2f2f2f;
+  padding: 3px 18px 0;
+  background: #fff;
+}
