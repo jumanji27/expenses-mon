@@ -13,33 +13,33 @@ gulp.task('default', () =>
   console.log('xxx')
 );
 
-// var modifyJade = (file, enc, callback) =>
-//   return through.obj((file, enc, callback) =>
-//     if (!file.isBuffer()) {
-//       this.push(file)
-//       callback()
-//       return
-//     }
+var modifyJade = (file, enc, callback) => {
+  through.obj((file, enc, callback) => {
+    if (!file.isBuffer()) {
+      this.push(file);
+      callback();
+      return;
+    }
 
-//     file_name =
-//       file.path
-//         .substring(
-//           file.path.indexOf('views/')
-//         )
-//         .replace('views/', '')
-//         .replace('.js', '')
-//         .replace(/\//g, '_')
+    var file_name =
+      file.path
+        .substring(
+          file.path.indexOf('views/')
+        )
+        .replace('views/', '')
+        .replace('.js', '')
+        .replace(/\//g, '_');
 
-//     contents =
-//       file.contents
-//         .toString()
-//         .replace('function template(locals) {', 'function tmpl_' + file_name + ' (locals) {')
-//     file.contents = new Buffer(contents)
-//     this.push(file)
+    var contents =
+      file.contents
+        .toString()
+        .replace('function template(locals) {', 'function tmpl_' + file_name + ' (locals) {');
+    file.contents = new Buffer(contents);
+    this.push(file);
 
-//     callback()
-//   )
-
+    callback();
+  });
+}
 
 // gulp.task('clean_public', () => {
 //   return gulp.src(
