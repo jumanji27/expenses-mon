@@ -11,7 +11,7 @@ import (
 
     "gopkg.in/mgo.v2"
 
-    "money_mon/server/helpers"
+    "expense_mon/server/helpers"
 )
 
 

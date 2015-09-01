@@ -8,7 +8,7 @@ import (
     "github.com/go-martini/martini"
     "github.com/martini-contrib/render"
 
-    "money_mon/server/model"
+    "expense_mon/server/model"
 )
 
 
@@ -23,6 +23,15 @@ func (self *Main) Init(app *martini.ClassicMartini) {
     app.Get(
         "/",
         func(render render.Render) {
+            render.HTML(http_success, "index", nil)
+        },
+    )
+
+    const api_base_url = "/api/v1"
+
+    app.Post(
+        api_base_url,
+        func(render render.Render) {
             render.JSON(
                 http_success,
                 map[string]interface{}{
@@ -33,13 +42,11 @@ func (self *Main) Init(app *martini.ClassicMartini) {
         },
     )
 
-    const api_base_url = "/api/v1/"
-
     model := model.Main{}
     model.Init()
 
     api_url := api_base_url
-    handler := "get"
+    handler := "/get"
     api_url += handler
 
     app.Post(
@@ -50,7 +57,7 @@ func (self *Main) Init(app *martini.ClassicMartini) {
     )
 
     api_url = api_base_url
-    handler = "set"
+    handler = "/set"
     api_url += handler
 
     app.Post(
