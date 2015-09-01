@@ -16,5 +16,8 @@
     "through2": "2.0.0",
     "path": "0.11.14"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "babel": "5.8.23",
+    "babel-core": "5.8.23"
+  }
 }

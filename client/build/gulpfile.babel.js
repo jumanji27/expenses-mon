@@ -1,21 +1,24 @@
-// var gulp = require('gulp'),
-//   ts = require('gulp-typescript'),
-//   run_sequence = require('run-sequence'),
-//   concat = require('gulp-concat'),
-//   clean = require('gulp-clean'),
-//   jade = require('gulp-jade'),
-//   less = require('gulp-less'),
-//   rename = require('gulp-rename'),
-//   through = require('through2'),
-//   path = require('path');
+import gulp from 'gulp';
+import runRequence from 'run-sequence';
+import concat from 'gulp-concat';
+import clean from 'gulp-clean';
+import jade from 'gulp-jade';
+import rename from 'gulp-rename';
+import through from 'through2';
+import path from 'path';
 
 
-// var jade_modify = function() {
-//   return through.obj(function (file, enc, callback) {
+
+gulp.task('default', () =>
+  console.log('xxx')
+);
+
+// var modifyJade = (file, enc, callback) =>
+//   return through.obj((file, enc, callback) =>
 //     if (!file.isBuffer()) {
-//       this.push(file);
-//       callback();
-//       return;
+//       this.push(file)
+//       callback()
+//       return
 //     }
 
 //     file_name =
@@ -25,21 +28,20 @@
 //         )
 //         .replace('views/', '')
 //         .replace('.js', '')
-//         .replace(/\//g, '_');
+//         .replace(/\//g, '_')
 
-//     var contents =
+//     contents =
 //       file.contents
 //         .toString()
-//         .replace('function template(locals) {', 'function tmpl_' + file_name + ' (locals) {');
-//     file.contents = new Buffer(contents);
-//     this.push(file);
+//         .replace('function template(locals) {', 'function tmpl_' + file_name + ' (locals) {')
+//     file.contents = new Buffer(contents)
+//     this.push(file)
 
-//     callback();
-//   });
-// }
+//     callback()
+//   )
 
 
-// gulp.task('clean_public', function() {
+// gulp.task('clean_public', () => {
 //   return gulp.src(
 //       ['../public/**/*', '!../public/storage', '!../public/storage/**/*.jpg'],
 //       {read: false}
@@ -49,7 +51,7 @@
 //     );
 // });
 
-// gulp.task('concat_vendor', function() {
+// gulp.task('concat_vendor', () => {
 //   return gulp.src(
 //       [
 //         'bower_components/jquery/jquery.js',
@@ -73,16 +75,16 @@
 //     .js.pipe(gulp.dest('tmp'));
 // });
 
-// gulp.task('compile_jade', function() {
+// gulp.task('compile_jade', () => {
 //   return gulp.src('../src/**/*.jade')
 //     .pipe(
 //       jade({client: true})
 //     )
-//     .pipe(jade_modify())
+//     .pipe(modifyJade())
 //     .pipe(gulp.dest('tmp/jade'))
 // });
 
-// gulp.task('concat_js', function() {
+// gulp.task('concat_js', () => {
 //   return gulp.src(
 //       ['tmp/vendor.js', 'tmp/ts.js', 'tmp/jade/**/*.js']
 //     )
@@ -96,13 +98,13 @@
 //     .pipe(gulp.dest('tmp/css'));
 // });
 
-// gulp.task('concat_css', function() {
+// gulp.task('concat_css', () => {
 //   return gulp.src('tmp/css/**/*.css')
 //     .pipe(concat('index.css'))
 //     .pipe(gulp.dest('../public'));
 // });
 
-// gulp.task('move_img', function(){
+// gulp.task('move_img', () =>{
 //   return gulp.src(
 //       ['../src/**/*.png', '../src/**/*.jpg']
 //     )
@@ -112,7 +114,7 @@
 //     .pipe(gulp.dest('../public/img'));
 // });
 
-// gulp.task('clean_tmp', function() {
+// gulp.task('clean_tmp', () => {
 //   return gulp.src(
 //       'tmp',
 //       {read: false}
@@ -121,8 +123,8 @@
 // });
 
 
-// gulp.task('build', function() {
-//   run_sequence(
+// gulp.task('build', () => {
+//   runRequence(
 //     'clean_public',
 //     ['concat_vendor', 'compile_typescript', 'compile_jade', 'compile_less', 'move_img'],
 //     ['concat_js', 'concat_css'],
@@ -132,7 +134,7 @@
 
 
 // gulp.task('run', function () {
-//   run_sequence('build', function() {
+//   runRequence('build', () => {
 //     gulp.watch(['../src/**/*.ts', '../src/**/*.jade', '../src/**/*.less'], ['build']);
 //   });
 // });
