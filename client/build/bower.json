@@ -5,6 +5,5 @@
     "backbone": "1.2.2",
     "jquery": "2.1.4",
     "jade": "1.11.0"
-  },
-  "devDependencies": {}
+  }
 }

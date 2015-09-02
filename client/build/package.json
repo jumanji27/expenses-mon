@@ -14,9 +14,9 @@
     "gulp-rename": "1.2.2",
     "run-sequence": "1.1.2",
     "through2": "2.0.0",
-    "path": "0.11.14"
-  },
-  "devDependencies": {
+    "path": "0.11.14",
+    "gulp-babel": "5.2.1",
+    "gulp-stylus": "2.0.6",
     "babel": "5.8.23",
     "babel-core": "5.8.23"
   }

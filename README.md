@@ -1,5 +1,7 @@
 ### Install Deps
 
+Install Mongo (2.6.5)
+
 Install Go (1.4.2) and prepare default GOPATH/GOROOT env variable
 
 Install Node (0.12.7)
@@ -13,6 +15,7 @@ cd client/build && npm install && bower install && npm install -g gulp bower
 
 ```
 gulp build
+mkdir ~/mongo && mongod --dbpath ~/mongo/
 go run server/main.go
 ```
 
@@ -20,5 +23,6 @@ go run server/main.go
 
 ```
 gulp run
+mkdir ~/mongo && mongod --dbpath ~/mongo/
 go run server/main.go
 ```
