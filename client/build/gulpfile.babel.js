@@ -4,16 +4,18 @@ import babel from 'gulp-babel';
 import jade from 'gulp-jade';
 import stylus from 'gulp-stylus';
 import concat from 'gulp-concat';
-import clean from 'gulp-clean';
+import del from 'del';
 import rename from 'gulp-rename';
 import through from 'through2';
 import path from 'path';
 
 
-let modifyJade = function() {
-  return through.obj(function (file, enc, callback) {
+let modifyJade = () => {
+  return through.obj((file, enc, callback) => { // Was crashed without return
+    let context = gulp.src('../src/**/*.jade');
+
     if (!file.isBuffer()) {
-      this.push(file);
+      context.push(file);
       callback();
       return;
     }
@@ -32,29 +34,24 @@ let modifyJade = function() {
         .toString()
         .replace('function template(locals) {', 'function tmpl_' + file_name + ' (locals) {');
     file.contents = new Buffer(contents);
-    this.push(file);
+    context.push(file);
 
     callback();
   });
-}
+};
 
 
 gulp.task('clean_public', () => {
-  gulp.src(
-      '../public/**/*',
-      {
-        read: false
-      }
-    )
-    .pipe(
-      clean({
-        force: true
-      })
-    )
+  return del(
+    '../public/**/*',
+    {
+      force: true
+    }
+  )
 });
 
 gulp.task('concat_vendor', () => {
-  gulp.src(
+  return gulp.src(
       [
         'bower_components/jquery/dist/jquery.js',
         'bower_components/underscore/underscore.js',
@@ -68,14 +65,14 @@ gulp.task('concat_vendor', () => {
 });
 
 gulp.task('compile_babel', () => {
-  gulp.src('../src/**/*.js')
+  return gulp.src('../src/**/*.js')
     .pipe(babel())
     .pipe(concat('babel.js'))
     .pipe(gulp.dest('tmp'))
 });
 
 gulp.task('compile_jade', () => {
-  gulp.src('../src/**/*.jade')
+  return gulp.src('../src/**/*.jade')
     .pipe(
       jade({
         client: true
@@ -87,7 +84,7 @@ gulp.task('compile_jade', () => {
 });
 
 gulp.task('concat_js', () => {
-  gulp.src(
+  return gulp.src(
       ['tmp/vendor.js', 'tmp/jade.js', 'tmp/babel.js']
     )
     .pipe(concat('main.js'))
@@ -95,14 +92,14 @@ gulp.task('concat_js', () => {
 });
 
 gulp.task('compile_stylus', function () {
-  gulp.src('../src/**/*.styl')
+  return gulp.src('../src/**/*.styl')
     .pipe(stylus())
     .pipe(concat('main.css'))
     .pipe(gulp.dest('tmp/css'))
 });
 
 gulp.task('move_img', () => {
-  gulp.src(
+  return gulp.src(
       ['../src/**/*.png', '../src/**/*.jpg']
     )
     .pipe(
@@ -114,18 +111,12 @@ gulp.task('move_img', () => {
 });
 
 gulp.task('clean_tmp', () => {
-  gulp.src(
-      'tmp',
-      {
-        read: false
-      }
-    )
-    .pipe(clean())
+  return del('tmp')
 });
 
 
 gulp.task('build', () => {
-  runRequence(
+  return runRequence(
     'clean_public',
     ['concat_vendor', 'compile_babel', 'compile_jade', 'compile_stylus', 'move_img'],
     'concat_js',
@@ -135,7 +126,7 @@ gulp.task('build', () => {
 
 
 gulp.task('run', function () {
-  runRequence('build', () => {
+  return runRequence('build', () => {
     gulp.watch(
       ['../src/**/*.js', '../src/**/*.jade', '../src/**/*.stylus'],
       ['build']
