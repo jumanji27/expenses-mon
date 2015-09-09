@@ -66,7 +66,11 @@ gulp.task('concat_vendor', () => {
 
 gulp.task('compile_babel', () => {
   return gulp.src('../src/**/*.js')
-    .pipe(babel())
+    .pipe(
+      babel({
+        modules: 'ignore'
+      })
+    )
     .pipe(concat('babel.js'))
     .pipe(gulp.dest('tmp'))
 });
@@ -95,7 +99,7 @@ gulp.task('compile_stylus', function () {
   return gulp.src('../src/**/*.styl')
     .pipe(stylus())
     .pipe(concat('main.css'))
-    .pipe(gulp.dest('tmp/css'))
+    .pipe(gulp.dest('../public'))
 });
 
 gulp.task('move_img', () => {

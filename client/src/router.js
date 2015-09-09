@@ -1,15 +1,23 @@
-class Router extends Backbone.Router {
-  constructor () {
-    super();
-  }
+import $ from 'jquery';
+import Backbone from 'backbone';
 
+
+export default Backbone.Router.extend({
   routes: {
-    '': 'main'
-  }
+    '': 'main',
+  },
 
-  main () {
-    console.log('Router#home was called!');
-  }
-}
+  initialize: () => {
+    console.log('router!');
+  },
 
-// export default Router;
+  main: () => {
+    console.log('main!');
+  },
+
+});
+
+
+let router = new Router();
+
+Backbone.history.start();

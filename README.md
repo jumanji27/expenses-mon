@@ -12,11 +12,11 @@ Install Node (0.12.7)
 ### Run
 
   gulp build
-  mkdir ~/mongo && mongod --dbpath ~/mongo/
+  mkdir ~/mongo && mongod --dbpath ~/mongo
   go run server/main.go
 
 ### Run Dev Server
 
   gulp run
-  mkdir ~/mongo && mongod --dbpath ~/mongo/
+  mkdir ~/mongo && mongod --dbpath ~/mongo
   go run server/main.go
