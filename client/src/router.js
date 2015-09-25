@@ -1,23 +1,14 @@
-import $ from 'jquery';
-import Backbone from 'backbone';
-
-
-export default Backbone.Router.extend({
+export default class Router extends Backbone.Router {
   routes: {
     '': 'main',
-  },
+    'about': 'about'
+  }
 
-  initialize: () => {
-    console.log('router!');
-  },
+  initialize() {
+    Backbone.history.start();
+  }
 
-  main: () => {
-    console.log('main!');
-  },
-
-});
-
-
-let router = new Router();
-
-Backbone.history.start();
+  main() {
+    console.log('hello main');
+  }
+}

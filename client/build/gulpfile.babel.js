@@ -1,6 +1,9 @@
 import gulp from 'gulp';
 import runRequence from 'run-sequence';
 import babel from 'gulp-babel';
+import browserify from 'browserify';
+import babelify from 'babelify';
+import source from 'vinyl-source-stream';
 import jade from 'gulp-jade';
 import stylus from 'gulp-stylus';
 import concat from 'gulp-concat';
@@ -8,7 +11,6 @@ import del from 'del';
 import rename from 'gulp-rename';
 import through from 'through2';
 import path from 'path';
-
 
 let modifyJade = () => {
   return through.obj((file, enc, callback) => { // Was crashed without return
@@ -65,14 +67,14 @@ gulp.task('concat_vendor', () => {
 });
 
 gulp.task('compile_babel', () => {
-  return gulp.src('../src/**/*.js')
-    .pipe(
-      babel({
-        modules: 'ignore'
-      })
-    )
-    .pipe(concat('babel.js'))
-    .pipe(gulp.dest('tmp'))
+  return browserify({
+    entries: ['../src/router.js', '../src/main.js'],
+    debug: true
+  })
+  .transform(babelify)
+  .bundle()
+  .pipe(source('babel.js'))
+  .pipe(gulp.dest('tmp'))
 });
 
 gulp.task('compile_jade', () => {
