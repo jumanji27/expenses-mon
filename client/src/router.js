@@ -1,14 +1,27 @@
-export default class Router extends Backbone.Router {
-  routes: {
-    '': 'main',
-    'about': 'about'
-  }
+import ExpenseModel from './models/expense'
+import ExpenseView from './views/components/shared/expense/main'
 
-  initialize() {
+
+export default class Router extends Backbone.Router {
+  constructor() {
+    super();
+
+    this.routes = {
+      '': 'main'
+    }
+
+    this.expense_mon = {
+      collections: {},
+      models: {},
+      views: {}
+    }
+
+    this._bindRoutes();
     Backbone.history.start();
   }
 
   main() {
-    console.log('hello main');
+    this.expense_mon.models.expense = new ExpenseModel();
+    this.expense_mon.views.expense = new ExpenseView();
   }
 }
