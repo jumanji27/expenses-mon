@@ -12,6 +12,7 @@ import rename from 'gulp-rename';
 import through from 'through2';
 import path from 'path';
 
+
 let modifyJade = () => {
   return through.obj((file, enc, callback) => { // Was crashed without return
     let context = gulp.src('../src/**/*.jade');
