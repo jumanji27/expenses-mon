@@ -41,7 +41,7 @@ let modifyJade = () => {
 
     callback();
   });
-};
+}
 
 
 gulp.task('clean_public', () => {

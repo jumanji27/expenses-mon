@@ -115,6 +115,12 @@ func (self *Main) Get() map[string]interface{} {
       }
 
       api_expenses = append(api_expenses, api_expenses_year)
+
+      // For first empty month new year
+      // Empty array instead null in response — bad API design T_T
+      if current_loop_year != time.Now().Year() {
+        api_expenses = append(api_expenses, [][]map[string]interface{}{})
+      }
     }
   }
 

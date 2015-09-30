@@ -1,15 +1,17 @@
 export default class Expense extends Backbone.Model {
   constructor() {
     super();
+
+    this.req();
   }
 
   req() {
-    $.ajax(
+    $.ajax({
       type: 'POST',
       url: 'api/v1/get',
-      success: function(res) {
-        console.log(res);
+      success: (res) => {
+        this.set(res.success);
       }
-    );
+    });
   }
 }
