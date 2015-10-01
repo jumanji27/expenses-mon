@@ -13,25 +13,25 @@ import (
 
 
 func main() {
-  martini_app := martini.Classic()
+  martiniApp := martini.Classic()
 
-  martini_app.Use(render.Renderer())
-  martini_app.Use(
+  martiniApp.Use(render.Renderer())
+  martiniApp.Use(
     render.Renderer(
       render.Options{
         Directory: "server/tmpl",
       },
     ),
   )
-  martini_app.Use(
+  martiniApp.Use(
     martini.Static("client/public"),
   )
 
   router := router.Main{}
-  router.Init(martini_app)
+  router.Init(martiniApp)
 
   helpers := helpers.Main{}
   helpers.LogSimpleMessage("App starting!")
 
-  martini_app.Run()
+  martiniApp.Run()
 }

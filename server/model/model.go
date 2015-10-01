@@ -21,7 +21,7 @@ type Main struct {
   MongoSession *mgo.Session
   DBExpense
   DBExpenseComment
-  ReqExpense
+  ReqSet
 }
 
 const (
@@ -55,109 +55,108 @@ type DBExpenseComment struct {
 }
 
 func (self *Main) Get() map[string]interface{} {
-  db_expenses := []DBExpenseComment{}
-  self.MongoCollection.Find(nil).All(&db_expenses)
+  dbExpenses := []DBExpenseComment{}
+  self.MongoCollection.Find(nil).All(&dbExpenses)
 
-  api_expenses_month := []map[string]interface{}{}
-  api_expenses_year := [][]map[string]interface{}{}
-  api_expenses := [][][]map[string]interface{}{}
+  apiExpensesMonth := []map[string]interface{}{}
+  apiExpensesYear := [][]map[string]interface{}{}
+  apiExpenses := [][][]map[string]interface{}{}
 
-  current_loop_month := db_expenses[0].Date.Month()
-  current_loop_year := db_expenses[0].Date.Year()
+  currentLoopMonth := dbExpenses[0].Date.Month()
+  currentLoopYear := dbExpenses[0].Date.Year()
 
-  var full_year_loop bool
+  var fullYearLoop bool
 
   // Loop is depended from DB struct (year must begin from january)
-  for db_expense_itr := 0; db_expense_itr < len(db_expenses); db_expense_itr++ {
-    if db_expenses[db_expense_itr].Date.Month() != current_loop_month {
-      api_expenses_year = append(api_expenses_year, api_expenses_month)
+  for dbExpenseItr := 0; dbExpenseItr < len(dbExpenses); dbExpenseItr++ {
+    if dbExpenses[dbExpenseItr].Date.Month() != currentLoopMonth {
+      apiExpensesYear = append(apiExpensesYear, apiExpensesMonth)
 
-      if db_expenses[db_expense_itr].Date.Year() != current_loop_year {
-        api_expenses = append(api_expenses, api_expenses_year)
+      if dbExpenses[dbExpenseItr].Date.Year() != currentLoopYear {
+        apiExpenses = append(apiExpenses, apiExpensesYear)
 
-        api_expenses_year = [][]map[string]interface{}{}
+        apiExpensesYear = [][]map[string]interface{}{}
       }
 
-      api_expenses_month = []map[string]interface{}{}
-      full_year_loop = true
+      apiExpensesMonth = []map[string]interface{}{}
+      fullYearLoop = true
     }
 
-    week_number := db_expenses[db_expense_itr].Date.Day() / 7
+    weekNumber := dbExpenses[dbExpenseItr].Date.Day() / 7
 
-    if week_number == 0 {
-      week_number = 1
+    if weekNumber == 0 {
+      weekNumber = 1
     }
 
-    api_expense := map[string]interface{}{}
+    apiExpense := map[string]interface{}{}
 
-    if len(db_expenses[db_expense_itr].Comment) > 0 {
-      api_expense = map[string]interface{}{
-        "week": week_number,
-        "value": db_expenses[db_expense_itr].Value,
-        "comment": db_expenses[db_expense_itr].Comment,
+    if len(dbExpenses[dbExpenseItr].Comment) > 0 {
+      apiExpense = map[string]interface{}{
+        "week": weekNumber,
+        "value": dbExpenses[dbExpenseItr].Value,
+        "comment": dbExpenses[dbExpenseItr].Comment,
       }
     } else {
-      api_expense = map[string]interface{}{
-        "week": week_number,
-        "value": db_expenses[db_expense_itr].Value,
+      apiExpense = map[string]interface{}{
+        "week": weekNumber,
+        "value": dbExpenses[dbExpenseItr].Value,
       }
     }
 
-    api_expenses_month = append(api_expenses_month, api_expense)
+    apiExpensesMonth = append(apiExpensesMonth, apiExpense)
 
-    current_loop_month = db_expenses[db_expense_itr].Date.Month()
-    current_loop_year = db_expenses[db_expense_itr].Date.Year()
+    currentLoopMonth = dbExpenses[dbExpenseItr].Date.Month()
+    currentLoopYear = dbExpenses[dbExpenseItr].Date.Year()
 
     // Last iteration
-    if db_expense_itr + 1 == len(db_expenses) {
-      if full_year_loop != true {
-        api_expenses_year = append(api_expenses_year, api_expenses_month)
+    if dbExpenseItr + 1 == len(dbExpenses) {
+      if fullYearLoop != true {
+        apiExpensesYear = append(apiExpensesYear, apiExpensesMonth)
       }
 
-      api_expenses = append(api_expenses, api_expenses_year)
+      apiExpenses = append(apiExpenses, apiExpensesYear)
 
       // For first empty month new year
       // Empty array instead null in response — bad API design T_T
-      if current_loop_year != time.Now().Year() {
-        api_expenses = append(api_expenses, [][]map[string]interface{}{})
+      if currentLoopYear != time.Now().Year() {
+        apiExpenses = append(apiExpenses, [][]map[string]interface{}{})
       }
     }
   }
 
   return map[string]interface{}{
-    "success": api_expenses,
+    "success": apiExpenses,
     "error": nil,
   }
 }
 
-type ReqExpense struct {
-  Value int `json:"value"`
-  Comment string `json:"comment"`
+type ReqSet struct {
+  Date int `json: "date"`
+  Value int `json: "value"`
+  Comment string `json: "comment"`
 }
 
 func (self *Main) Set(res *http.Request) map[string]interface{} {
-  body_uint8, err := ioutil.ReadAll(res.Body)
-  if err != nil {
-    self.Helpers.LogWarning(err)
-  }
+  dbExpense := ReqSet{}
 
-  body := strings.Replace(string(body_uint8), "'", "\"", -1)
+  json.Unmarshal(
+    []byte(
+      self.ProcessReqBody(res),
+    ),
+    &dbExpense,
+  )
 
-  db_expense := ReqExpense{}
+  if dbExpense.Value > 0 {
+    date64 := int64(dbExpense.Date)
+    date := time.Unix(date64, 0)
 
-  err = json.Unmarshal([]byte(body), &db_expense)
-  if err != nil {
-    self.Helpers.LogWarning(err)
-  }
-
-  if db_expense.Value > 0 {
-    if len(db_expense.Comment) > 0 {
+    if len(dbExpense.Comment) > 0 {
       self.MongoCollection.Insert(
-        &DBExpenseComment{time.Now(), db_expense.Value, db_expense.Comment},
+        &DBExpenseComment{date, dbExpense.Value, dbExpense.Comment},
       )
     } else {
       self.MongoCollection.Insert(
-        &DBExpense{time.Now(), db_expense.Value},
+        &DBExpense{date, dbExpense.Value},
       )
     }
 
@@ -165,7 +164,7 @@ func (self *Main) Set(res *http.Request) map[string]interface{} {
     fmt.Printf(
       "%s | Added to DB: %s\n",
       time.Now().Format(LogTimeFormat),
-      db_expense,
+      dbExpense,
     )
 
     return map[string]interface{}{
@@ -180,4 +179,90 @@ func (self *Main) Set(res *http.Request) map[string]interface{} {
       "error": "Data validation error",
     }
   }
+}
+
+type ReqRemove struct {
+  Date int `json: "date"`
+}
+
+const (
+  OneDayTimestamp = 86400
+)
+
+func (self *Main) Remove(res *http.Request) map[string]interface{} {
+  dbExpense := ReqRemove{}
+
+  json.Unmarshal(
+    []byte(
+      self.ProcessReqBody(res),
+    ),
+    &dbExpense,
+  )
+
+  if dbExpense.Date > 0 {
+    rawDate :=
+      time.Unix(
+        int64(dbExpense.Date),
+        0,
+      )
+
+    date, err :=
+      time.Parse(
+        "2006-01-02",
+        rawDate.Format("2006-01-02"),
+      )
+    if err != nil {
+      self.Helpers.LogWarning(err)
+    }
+
+    startDateIntervalTimestamp := int(date.Unix()) - (int(date.Weekday()) - 1) * OneDayTimestamp
+    startDateInterval :=
+      time.Unix(
+        int64(startDateIntervalTimestamp),
+        0,
+      )
+
+    endDateInterval :=
+      time.Unix(
+        int64(startDateIntervalTimestamp + OneDayTimestamp * 7),
+        0,
+      )
+
+    dbExpenses := []DBExpenseComment{}
+    self.MongoCollection.Find(nil).All(&dbExpenses)
+
+    // for dbExpenseItr := 0; dbExpenseItr < len(dbExpenses); dbExpenseItr++ {
+    //   if dbExpenses[dbExpenseItr].Date.Unix()
+    // }
+
+    // self.MongoCollection.Remove()
+
+    // No generics for common method T_T
+    fmt.Printf(
+      "%s | Removed from DB: %s\n",
+      time.Now().Format(LogTimeFormat),
+      dbExpense,
+    )
+
+    return map[string]interface{}{
+      "success": true,
+      "error": nil,
+    }
+  } else {
+    self.Helpers.LogSimpleMessage("Failed request, validation error")
+
+    return map[string]interface{}{
+      "success": nil,
+      "error": "Data validation error",
+    }
+  }
+}
+
+func (self *Main) ProcessReqBody(res *http.Request) string {
+  bodyUInt8, err := ioutil.ReadAll(res.Body)
+  if err != nil {
+    self.Helpers.LogWarning(err)
+  }
+
+  return strings.Replace(string(bodyUInt8), "'", "\"", -1)
 }

@@ -17,23 +17,23 @@ type Main struct {}
 
 func (self *Main) Init(app *martini.ClassicMartini) {
   const (
-    http_success = 200
+    httpSuccess = 200
   )
 
   app.Get(
     "/**",
     func(render render.Render) {
-      render.HTML(http_success, "index", nil)
+      render.HTML(httpSuccess, "index", nil)
     },
   )
 
-  const api_base_url = "/api/v1"
+  const apiBaseURL = "/api/v1"
 
   app.Post(
-    api_base_url,
+    apiBaseURL,
     func(render render.Render) {
       render.JSON(
-        http_success,
+        httpSuccess,
         map[string]interface{}{
           "success": map[string]interface{}{"greeting": "Hello, I'm your API!"},
           "error": nil,
@@ -45,25 +45,36 @@ func (self *Main) Init(app *martini.ClassicMartini) {
   model := model.Main{}
   model.Init()
 
-  api_url := api_base_url
+  apiURL := apiBaseURL
   handler := "/get"
-  api_url += handler
+  apiURL += handler
 
   app.Post(
-    api_url,
+    apiURL,
     func(render render.Render) {
-      render.JSON(http_success, model.Get())
+      render.JSON(httpSuccess, model.Get())
     },
   )
 
-  api_url = api_base_url
+  apiURL = apiBaseURL
   handler = "/set"
-  api_url += handler
+  apiURL += handler
 
   app.Post(
-    api_url,
+    apiURL,
     func(res *http.Request, render render.Render) {
-      render.JSON(http_success, model.Set(res))
+      render.JSON(httpSuccess, model.Set(res))
+    },
+  )
+
+  apiURL = apiBaseURL
+  handler = "/remove"
+  apiURL += handler
+
+  app.Post(
+    apiURL,
+    func(res *http.Request, render render.Render) {
+      render.JSON(httpSuccess, model.Remove(res))
     },
   )
 }
