@@ -10,6 +10,7 @@ import (
   "strings"
 
   "gopkg.in/mgo.v2"
+  "gopkg.in/mgo.v2/bson"
 
   "expense_mon/server/helpers"
 )
@@ -20,7 +21,9 @@ type Main struct {
   MongoCollection *mgo.Collection
   MongoSession *mgo.Session
   DBExpense
-  DBExpenseComment
+  DBExpenseRequred
+  DBExpenseSet
+  DBExpenseSetRequred
   ReqSet
 }
 
@@ -44,18 +47,20 @@ func (self *Main) Init() {
 }
 
 type DBExpense struct {
-  Date time.Time
-  Value int
-}
-
-type DBExpenseComment struct {
+  Id bson.ObjectId `bson:"_id"`
   Date time.Time
   Value int
   Comment string
 }
 
+type DBExpenseRequred struct {
+  Id bson.ObjectId `bson:"_id"`
+  Date time.Time
+  Value int
+}
+
 func (self *Main) Get() map[string]interface{} {
-  dbExpenses := []DBExpenseComment{}
+  dbExpenses := []DBExpense{}
   self.MongoCollection.Find(nil).All(&dbExpenses)
 
   apiExpensesMonth := []map[string]interface{}{}
@@ -92,12 +97,14 @@ func (self *Main) Get() map[string]interface{} {
 
     if len(dbExpenses[dbExpenseItr].Comment) > 0 {
       apiExpense = map[string]interface{}{
+        "id": dbExpenses[dbExpenseItr].Id,
         "week": weekNumber,
         "value": dbExpenses[dbExpenseItr].Value,
         "comment": dbExpenses[dbExpenseItr].Comment,
       }
     } else {
       apiExpense = map[string]interface{}{
+        "id": dbExpenses[dbExpenseItr].Id,
         "week": weekNumber,
         "value": dbExpenses[dbExpenseItr].Value,
       }
@@ -130,6 +137,17 @@ func (self *Main) Get() map[string]interface{} {
   }
 }
 
+type DBExpenseSet struct {
+  Date time.Time
+  Value int
+  Comment string
+}
+
+type DBExpenseSetRequred struct {
+  Date time.Time
+  Value int
+}
+
 type ReqSet struct {
   Date int `json: "date"`
   Value int `json: "value"`
@@ -152,11 +170,11 @@ func (self *Main) Set(res *http.Request) map[string]interface{} {
 
     if len(dbExpense.Comment) > 0 {
       self.MongoCollection.Insert(
-        &DBExpenseComment{date, dbExpense.Value, dbExpense.Comment},
+        &DBExpenseSet{date, dbExpense.Value, dbExpense.Comment},
       )
     } else {
       self.MongoCollection.Insert(
-        &DBExpense{date, dbExpense.Value},
+        &DBExpenseSetRequred{date, dbExpense.Value},
       )
     }
 
@@ -182,7 +200,7 @@ func (self *Main) Set(res *http.Request) map[string]interface{} {
 }
 
 type ReqRemove struct {
-  Date int `json: "date"`
+  Id string `json: "id"`
 }
 
 const (
@@ -190,63 +208,46 @@ const (
 )
 
 func (self *Main) Remove(res *http.Request) map[string]interface{} {
-  dbExpense := ReqRemove{}
+  reqExpense := ReqRemove{}
 
   json.Unmarshal(
     []byte(
       self.ProcessReqBody(res),
     ),
-    &dbExpense,
+    &reqExpense,
   )
 
-  if dbExpense.Date > 0 {
-    rawDate :=
-      time.Unix(
-        int64(dbExpense.Date),
-        0,
-      )
+  if len(reqExpense.Id) > 0 {
+    dbExpense := DBExpense{}
+    self.MongoCollection.Find(
+      bson.M{
+        "_id": bson.ObjectIdHex(reqExpense.Id),
+      },
+    ).One(&dbExpense)
 
-    date, err :=
-      time.Parse(
-        "2006-01-02",
-        rawDate.Format("2006-01-02"),
-      )
-    if err != nil {
-      self.Helpers.LogWarning(err)
-    }
-
-    startDateIntervalTimestamp := int(date.Unix()) - (int(date.Weekday()) - 1) * OneDayTimestamp
-    startDateInterval :=
-      time.Unix(
-        int64(startDateIntervalTimestamp),
-        0,
-      )
-
-    endDateInterval :=
-      time.Unix(
-        int64(startDateIntervalTimestamp + OneDayTimestamp * 7),
-        0,
-      )
-
-    dbExpenses := []DBExpenseComment{}
-    self.MongoCollection.Find(nil).All(&dbExpenses)
-
-    // for dbExpenseItr := 0; dbExpenseItr < len(dbExpenses); dbExpenseItr++ {
-    //   if dbExpenses[dbExpenseItr].Date.Unix()
-    // }
-
-    // self.MongoCollection.Remove()
-
-    // No generics for common method T_T
-    fmt.Printf(
-      "%s | Removed from DB: %s\n",
-      time.Now().Format(LogTimeFormat),
-      dbExpense,
+    self.MongoCollection.Remove(
+      bson.M{
+        "_id": bson.ObjectIdHex(reqExpense.Id),
+      },
     )
 
-    return map[string]interface{}{
-      "success": true,
-      "error": nil,
+    if len(dbExpense.Id) > 0 {
+      // No generics for common method T_T
+      fmt.Printf(
+        "%s | Removed from DB: %s\n",
+        time.Now().Format(LogTimeFormat),
+        reqExpense,
+      )
+
+      return map[string]interface{}{
+        "success": true,
+        "error": nil,
+      }
+    } else {
+      return map[string]interface{}{
+        "success": nil,
+        "error": "Did't found this expense",
+      }
     }
   } else {
     self.Helpers.LogSimpleMessage("Failed request, validation error")
