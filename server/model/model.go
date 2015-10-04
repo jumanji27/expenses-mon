@@ -59,6 +59,10 @@ type DBExpenseRequred struct {
   Value int
 }
 
+const (
+  UnitMeasure = 5000
+)
+
 func (self *Main) Get() map[string]interface{} {
   dbExpenses := []DBExpense{}
   self.MongoCollection.Find(nil).All(&dbExpenses)
@@ -134,7 +138,7 @@ func (self *Main) Get() map[string]interface{} {
   return map[string]interface{}{
     "success":
       map[string]interface{}{
-        "unit_measure": 5000,
+        "unit_measure": UnitMeasure,
         "expenses": apiExpenses,
       },
     "error": nil,
