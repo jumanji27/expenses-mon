@@ -8,7 +8,17 @@ export default class Expense extends Backbone.View {
   }
 
   render() {
-    // Loop up data lvl here
-    console.log(this.model);
+    let expenses = this.model.get('expenses');
+    let html = '';
+
+    for (let year of expenses) {
+      for (let month of year) {
+        for (let expense of month) {
+          console.log(expense);
+        }
+      }
+    }
+
+
   }
 }

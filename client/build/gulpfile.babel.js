@@ -14,16 +14,14 @@ import path from 'path';
 
 
 let modifyJade = () => {
-  return through.obj((file, enc, callback) => { // Was crashed without return
-    let context = gulp.src('../src/**/*.jade');
-
+  function transform(file, enc, callback) { // Without "function" context was skipped
     if (!file.isBuffer()) {
-      context.push(file);
+      this.push(file);
       callback();
       return;
     }
 
-    let file_name =
+    let fileName =
       file.path
         .substring(
           file.path.indexOf('views/')
@@ -35,12 +33,14 @@ let modifyJade = () => {
     let contents =
       file.contents
         .toString()
-        .replace('function template(locals) {', 'function tmpl_' + file_name + ' (locals) {');
-    file.contents = new Buffer(contents);
-    context.push(file);
+        .replace('function template(locals) {', 'function tmpl_' + fileName + ' (locals) {');
 
+    file.contents = new Buffer(contents);
+    this.push(file);
     callback();
-  });
+  }
+
+  return through.obj(transform);
 }
 
 
