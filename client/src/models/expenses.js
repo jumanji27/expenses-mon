@@ -1,4 +1,4 @@
-export default class Expense extends Backbone.Model {
+export default class Expenses extends Backbone.Model {
   constructor() {
     super();
 

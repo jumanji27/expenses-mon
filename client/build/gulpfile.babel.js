@@ -135,7 +135,7 @@ gulp.task('build', () => {
 gulp.task('run', function () {
   return runRequence('build', () => {
     gulp.watch(
-      ['../src/**/*.js', '../src/**/*.jade', '../src/**/*.stylus'],
+      ['../src/**/*.js', '../src/**/*.jade', '../src/**/*.styl'],
       ['build']
     )
   })

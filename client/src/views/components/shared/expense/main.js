@@ -1,24 +1,11 @@
 export default class Expense extends Backbone.View {
-  constructor(model) {
+  constructor() {
     super();
-
-    this.model = model;
-
-    this.listenTo(this.model, 'change', this.render);
   }
 
-  render() {
-    let expenses = this.model.get('expenses');
-    let html = '';
-
-    for (let year of expenses) {
-      for (let month of year) {
-        for (let expense of month) {
-          console.log(expense);
-        }
-      }
-    }
-
-
+  returnHTML(value) {
+    return tmpl_components_shared_expense_main({
+      value: value
+    });
   }
 }

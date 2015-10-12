@@ -1,5 +1,5 @@
-import ExpenseModel from './models/expense'
-import ExpenseView from './views/components/shared/expense/main'
+import ExpensesModel from './models/expenses';
+import MainPageView from './views/components/main/main';
 
 
 export default class Router extends Backbone.Router {
@@ -13,7 +13,9 @@ export default class Router extends Backbone.Router {
     this.expense_mon = {
       collections: {},
       models: {},
-      views: {}
+      views: {
+        main: {}
+      }
     }
 
     this._bindRoutes();
@@ -21,7 +23,7 @@ export default class Router extends Backbone.Router {
   }
 
   main() {
-    this.expense_mon.models.expense = new ExpenseModel();
-    this.expense_mon.views.expense = new ExpenseView(this.expense_mon.models.expense);
+    this.expense_mon.models.expenses = new ExpensesModel();
+    this.expense_mon.views.main.main = new MainPageView(this.expense_mon.models.expenses);
   }
 }
