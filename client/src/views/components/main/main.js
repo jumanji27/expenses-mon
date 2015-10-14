@@ -1,4 +1,4 @@
-import Expense from '../../../views/components/shared/expense/main';
+import Month from '../../../views/components/shared/month/main';
 
 
 export default class Main extends Backbone.View {
@@ -11,15 +11,13 @@ export default class Main extends Backbone.View {
   }
 
   render() {
-    let expenses = this.model.get('expenses');
-    let html = '';
-    let expense = new Expense()
+    let html = '',
+      expenses = this.model.get('expenses'),
+      month = new Month();
 
     for (let year of expenses) {
-      for (let month of year) {
-        for (let expenseFromModel of month) {
-          html += expense.returnHTML(expenseFromModel.value);
-        }
+      for (let monthFromModel of year) {
+        html += month.returnHTML(monthFromModel);
       }
     }
 

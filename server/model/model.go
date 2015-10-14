@@ -41,7 +41,7 @@ func (self *Main) Init() {
   }
 
   self.MongoSession = session
-  self.MongoCollection = session.DB("test").C("money_mon")
+  self.MongoCollection = session.DB("money_mon").C("index")
 
   self.Helpers.LogSimpleMessage("Mongo ready")
 }
