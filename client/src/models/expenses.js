@@ -61,6 +61,6 @@ export default class Expenses extends Backbone.Model {
       expenses.push(year);
     }
 
-    return expenses;
+    return expenses.reverse();
   }
 }
