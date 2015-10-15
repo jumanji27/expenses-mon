@@ -1,6 +1,3 @@
-import Month from '../../../views/components/shared/month/main';
-
-
 export default class Main extends Backbone.View {
   constructor(model) {
     super();
@@ -11,16 +8,10 @@ export default class Main extends Backbone.View {
   }
 
   render() {
-    let html = '',
-      expenses = this.model.get('expenses'),
-      month = new Month();
-
-    for (let year of expenses) {
-      for (let monthFromModel of year) {
-        html += month.returnHTML(monthFromModel);
-      }
-    }
-
-    $('.js_wrapper').html(html);
+    $('.js_wrapper').html(
+      tmpl_components_main_main({
+        expenses: this.model.get('expenses')
+      })
+    );
   }
 }
