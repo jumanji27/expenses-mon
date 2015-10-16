@@ -91,11 +91,9 @@ func (self *Main) Get() map[string]interface{} {
       fullYearLoop = true
     }
 
-    weekNumber := dbExpenses[dbExpenseItr].Date.Day() / 7
+    weekNumber := (dbExpenses[dbExpenseItr].Date.Day() / 7) + 1
 
-    if weekNumber == 0 {
-      weekNumber = 1
-    }
+    fmt.Println(dbExpenses[dbExpenseItr].Date.Day())
 
     apiExpense := map[string]interface{}{}
 
