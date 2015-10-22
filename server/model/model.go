@@ -29,6 +29,7 @@ type Main struct {
 
 const (
   LogTimeFormat = "02 Jan 2006 15:04:05"
+  OneDayTimestamp = 86400
 )
 
 
@@ -73,8 +74,16 @@ func (self *Main) Get() map[string]interface{} {
 
   currentLoopMonth := dbExpenses[0].Date.Month()
   currentLoopYear := dbExpenses[0].Date.Year()
+  monthOffset := int(dbExpenses[0].Date.Weekday()) - 1  // Sunday is last weekday in EU
 
   var fullYearLoop bool
+  var firstDayOfMonthIsSunday bool
+
+  // Sunday is last weekday in EU
+  if monthOffset < 0 {
+    monthOffset = 6
+    firstDayOfMonthIsSunday = true
+  }
 
   // Loop is depended from DB struct (year must begin from january)
   for dbExpenseItr := 0; dbExpenseItr < len(dbExpenses); dbExpenseItr++ {
@@ -87,13 +96,35 @@ func (self *Main) Get() map[string]interface{} {
         apiExpensesYear = [][]map[string]interface{}{}
       }
 
+      firstMonthDay :=
+        time.Unix(
+          int64(
+            int(dbExpenses[dbExpenseItr].Date.Unix()) - (dbExpenses[dbExpenseItr].Date.Day() - 1) * OneDayTimestamp,
+          ),
+          0,
+        )
+
+      monthOffset = int(firstMonthDay.Weekday()) - int(firstMonthDay.Day())
+
+      // Sunday is last weekday in EU
+      if monthOffset < 0 {
+        monthOffset = 6
+        firstDayOfMonthIsSunday = true
+      }
+
       apiExpensesMonth = []map[string]interface{}{}
       fullYearLoop = true
     }
 
-    weekNumber := (dbExpenses[dbExpenseItr].Date.Day() / 7) + 1
+    var weekNumber int
 
-    fmt.Println(dbExpenses[dbExpenseItr].Date.Day())
+    if firstDayOfMonthIsSunday != true {
+      weekNumber = (monthOffset + dbExpenses[dbExpenseItr].Date.Day()) / 7 + 1
+    } else {
+      weekNumber = 1
+    }
+
+    firstDayOfMonthIsSunday = false
 
     apiExpense := map[string]interface{}{}
 
@@ -208,10 +239,6 @@ func (self *Main) Set(res *http.Request) map[string]interface{} {
 type ReqRemove struct {
   Id string `json: "id"`
 }
-
-const (
-  OneDayTimestamp = 86400
-)
 
 func (self *Main) Remove(res *http.Request) map[string]interface{} {
   reqExpense := ReqRemove{}
