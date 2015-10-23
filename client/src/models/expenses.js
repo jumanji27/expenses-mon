@@ -11,13 +11,13 @@ export default class Expenses extends Backbone.Model {
       url: 'api/v1/get',
       success: (res) => {
         this.set({
-          expenses: this.addEmptyWeeks(res.success.expenses)
+          expenses: this.format(res.success.expenses)
         });
       }
     });
   }
 
-  addEmptyWeeks(apiExpenses) {
+  format(apiExpenses) {
     let WEEKS_IN_MONTH = 5,
       MONTHS = [
         "January",
@@ -67,13 +67,30 @@ export default class Expenses extends Backbone.Model {
                   });
               }
           }
-
           month[0].month = MONTHS[monthKey];
 
           prevWeek = apiExpenses[key][monthKey][expenseKey].week;
         }
 
-        year.push(month)
+        year.push(month);
+
+        let keyInt = parseInt(key);
+        let monthKeyInt = parseInt(monthKey);
+
+        if (keyInt + 1 === apiExpenses.length && monthKeyInt + 1 === apiExpenses[key].length) {
+          let currentMonth = new Date().getMonth() - 1;
+
+          if (currentMonth > monthKey) {
+            let emptyMonth = [];
+
+            // for (let gapKey = 1; gapKey < weekGap; gapKey++) {
+
+            // DOPIL HERE
+
+            // }
+
+          }
+        }
       }
 
       expenses.push(year);
