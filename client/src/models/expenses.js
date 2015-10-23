@@ -79,15 +79,23 @@ export default class Expenses extends Backbone.Model {
 
         if (keyInt + 1 === apiExpenses.length && monthKeyInt + 1 === apiExpenses[key].length) {
           let currentMonth = new Date().getMonth() - 1;
+          let monthKeyInt = parseInt(monthKey);
 
-          if (currentMonth > monthKey) {
-            let emptyMonth = [];
+          if (currentMonth > monthKeyInt) {
+            for (let additionMonthsKey = 0; additionMonthsKey < currentMonth - monthKeyInt; additionMonthsKey++) {
+              let emptyMonth = [];
 
-            // for (let gapKey = 1; gapKey < weekGap; gapKey++) {
+              for (let additionMonthsExpenseKey = 1; additionMonthsExpenseKey < 5; additionMonthsExpenseKey++) {
+                  emptyMonth.push({
+                    value: 0,
+                    week: additionMonthsExpenseKey
+                  });
+              }
 
-            // DOPIL HERE
+              emptyMonth[0].month = MONTHS[monthKeyInt + additionMonthsKey + 1];
 
-            // }
+              year.push(emptyMonth);
+            }
 
           }
         }
