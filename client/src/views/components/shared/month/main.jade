@@ -1,4 +1,6 @@
 .month.k_clear-float
+  span
+    = expenses[key][monthKey][0].month
   - for (expenseKey in expenses[key][monthKey]) {
     include ../expense/main.jade
   - }

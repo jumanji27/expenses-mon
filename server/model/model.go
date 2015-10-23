@@ -62,11 +62,14 @@ type DBExpenseRequred struct {
 
 const (
   UnitMeasure = 5000
+  Currency = "RUB"
 )
 
 func (self *Main) Get() map[string]interface{} {
   dbExpenses := []DBExpense{}
   self.MongoCollection.Find(nil).All(&dbExpenses)
+
+  dbExpensesLength := len(dbExpenses)
 
   apiExpensesMonth := []map[string]interface{}{}
   apiExpensesYear := [][]map[string]interface{}{}
@@ -79,6 +82,13 @@ func (self *Main) Get() map[string]interface{} {
   var fullYearLoop bool
   var firstDayOfMonthIsSunday bool
 
+  // Handle fill map
+  averageUSDRUBRate :=
+    map[int]float32{
+      2013: 31.9,
+      2014: 38.6,
+    }
+
   // Sunday is last weekday in EU
   if monthOffset < 0 {
     monthOffset = 6
@@ -86,11 +96,14 @@ func (self *Main) Get() map[string]interface{} {
   }
 
   // Loop is depended from DB struct (year must begin from january)
-  for dbExpenseItr := 0; dbExpenseItr < len(dbExpenses); dbExpenseItr++ {
-    if dbExpenses[dbExpenseItr].Date.Month() != currentLoopMonth {
+  for dbExpenseItr := 0; dbExpenseItr < dbExpensesLength; dbExpenseItr++ {
+    month := dbExpenses[dbExpenseItr].Date.Month()
+    year := dbExpenses[dbExpenseItr].Date.Year()
+
+    if month != currentLoopMonth {
       apiExpensesYear = append(apiExpensesYear, apiExpensesMonth)
 
-      if dbExpenses[dbExpenseItr].Date.Year() != currentLoopYear {
+      if year != currentLoopYear {
         apiExpenses = append(apiExpenses, apiExpensesYear)
 
         apiExpensesYear = [][]map[string]interface{}{}
@@ -116,40 +129,66 @@ func (self *Main) Get() map[string]interface{} {
       fullYearLoop = true
     }
 
+    day := dbExpenses[dbExpenseItr].Date.Day()
     var weekNumber int
 
-    if firstDayOfMonthIsSunday != true {
-      weekNumber = (monthOffset + dbExpenses[dbExpenseItr].Date.Day()) / 7 + 1
-    } else {
+    if firstDayOfMonthIsSunday == true && day == 1 {
       weekNumber = 1
+    } else {
+      weekNumber = (monthOffset + day) / 7 + 1
+    }
+
+    // UI possible restrictions
+    if weekNumber > 5 {
+      weekNumber = 5
     }
 
     firstDayOfMonthIsSunday = false
 
     apiExpense := map[string]interface{}{}
+    id := dbExpenses[dbExpenseItr].Id
+    comment := dbExpenses[dbExpenseItr].Comment
+    value := dbExpenses[dbExpenseItr].Value
+    monthInt := int(month)
+    commentLength := len(comment)
 
-    if len(dbExpenses[dbExpenseItr].Comment) > 0 {
+    if monthInt == 1 && averageUSDRUBRate[year] > 0 && commentLength > 0 {
       apiExpense = map[string]interface{}{
-        "id": dbExpenses[dbExpenseItr].Id,
+        "id": id,
         "week": weekNumber,
-        "value": dbExpenses[dbExpenseItr].Value,
-        "comment": dbExpenses[dbExpenseItr].Comment,
+        "value": value,
+        "comment": comment,
+        "year_average_usd_rub_rate": averageUSDRUBRate[year],
+      }
+    } else if monthInt == 1 && averageUSDRUBRate[year] > 0 {
+      apiExpense = map[string]interface{}{
+        "id": id,
+        "week": weekNumber,
+        "value": value,
+        "year_average_usd_rub_rate": averageUSDRUBRate[year],
+      }
+    } else if commentLength > 0 {
+      apiExpense = map[string]interface{}{
+        "id": id,
+        "week": weekNumber,
+        "value": value,
+        "comment": comment,
       }
     } else {
       apiExpense = map[string]interface{}{
-        "id": dbExpenses[dbExpenseItr].Id,
+        "id": id,
         "week": weekNumber,
-        "value": dbExpenses[dbExpenseItr].Value,
+        "value": value,
       }
     }
 
     apiExpensesMonth = append(apiExpensesMonth, apiExpense)
 
-    currentLoopMonth = dbExpenses[dbExpenseItr].Date.Month()
-    currentLoopYear = dbExpenses[dbExpenseItr].Date.Year()
+    currentLoopMonth = month
+    currentLoopYear = year
 
     // Last iteration
-    if dbExpenseItr + 1 == len(dbExpenses) {
+    if dbExpenseItr + 1 == dbExpensesLength {
       if fullYearLoop != true {
         apiExpensesYear = append(apiExpensesYear, apiExpensesMonth)
       }
@@ -167,8 +206,9 @@ func (self *Main) Get() map[string]interface{} {
   return map[string]interface{}{
     "success":
       map[string]interface{}{
-        "unit_measure": UnitMeasure,
         "expenses": apiExpenses,
+        "unit_measure": UnitMeasure,
+        "currency": Currency,
       },
     "error": nil,
   }

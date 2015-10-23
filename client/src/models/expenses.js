@@ -18,19 +18,33 @@ export default class Expenses extends Backbone.Model {
   }
 
   addEmptyWeeks(apiExpenses) {
-    let WEEKS_IN_MONTH = 5;
+    let WEEKS_IN_MONTH = 5,
+      MONTHS = [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December"
+      ];
 
     let expenses = [];
 
-    for (let apiYear of apiExpenses) {
+    for (let key in apiExpenses) {
       let year = [];
 
-      for (let apiMonth of apiYear) {
+      for (let monthKey in apiExpenses[key]) {
         let month = [],
           prevWeek = 0
 
-        for (let key in apiMonth) {
-          let weekGap = apiMonth[key].week - prevWeek;
+        for (let expenseKey in apiExpenses[key][monthKey]) {
+          let weekGap = apiExpenses[key][monthKey][expenseKey].week - prevWeek;
 
           if (weekGap > 1) {
             for (let gapKey = 1; gapKey < weekGap; gapKey++) {
@@ -41,18 +55,22 @@ export default class Expenses extends Backbone.Model {
           }
 
           month.push({
-            value: apiMonth[key].value
+            value: apiExpenses[key][monthKey][expenseKey].value
           });
 
-          if (apiMonth.length === (parseInt(key) + 1) && apiMonth[key].week !== WEEKS_IN_MONTH) {
-            for (let lastMonthKey = 1; lastMonthKey <= WEEKS_IN_MONTH - apiMonth[key].week; lastMonthKey++) {
-              month.push({
-                value: 0
-              });
-            }
+          if (apiExpenses[key][monthKey].length === (parseInt(expenseKey) + 1) &&
+            apiExpenses[key][monthKey][expenseKey].week !== WEEKS_IN_MONTH) {
+              for (let lastMonthKey = 1; lastMonthKey <= WEEKS_IN_MONTH - apiExpenses[key][monthKey][expenseKey].week;
+                lastMonthKey++) {
+                  month.push({
+                    value: 0
+                  });
+              }
           }
 
-          prevWeek = apiMonth[key].week;
+          month[0].month = MONTHS[monthKey];
+
+          prevWeek = apiExpenses[key][monthKey][expenseKey].week;
         }
 
         year.push(month)
