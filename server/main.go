@@ -14,6 +14,7 @@ import (
 
 func main() {
   martiniApp := martini.Classic()
+  m.RunOnAddr(":3001")
 
   martiniApp.Use(render.Renderer())
   martiniApp.Use(
