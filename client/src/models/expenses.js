@@ -36,15 +36,15 @@ export default class Expenses extends Backbone.Model {
 
     let expenses = [];
 
-    for (let key in apiExpenses) {
+    apiExpenses.map((rawYear, key) => {
       let year = [];
 
-      for (let monthKey in apiExpenses[key]) {
+      rawYear.map((rawMonth, monthKey) => {
         let month = [],
           prevWeek = 0
 
-        for (let expenseKey in apiExpenses[key][monthKey]) {
-          let weekGap = apiExpenses[key][monthKey][expenseKey].week - prevWeek;
+        rawMonth.map((expense, expenseKey) => {
+          let weekGap = expense.week - prevWeek;
 
           if (weekGap > 1) {
             for (let gapKey = 1; gapKey < weekGap; gapKey++) {
@@ -55,54 +55,48 @@ export default class Expenses extends Backbone.Model {
           }
 
           month.push({
-            value: apiExpenses[key][monthKey][expenseKey].value
+            value: expense.value
           });
 
-          if (apiExpenses[key][monthKey].length === (parseInt(expenseKey) + 1) &&
-            apiExpenses[key][monthKey][expenseKey].week !== WEEKS_IN_MONTH) {
-              for (let lastMonthKey = 1; lastMonthKey <= WEEKS_IN_MONTH - apiExpenses[key][monthKey][expenseKey].week;
-                lastMonthKey++) {
-                  month.push({
-                    value: 0
-                  });
-              }
+          if (rawMonth.length === expenseKey + 1 && expense.week !== WEEKS_IN_MONTH) {
+            for (let lastMonthKey = 1; lastMonthKey <= WEEKS_IN_MONTH - expense.week; lastMonthKey++) {
+              month.push({
+                value: 0
+              });
+            }
           }
           month[0].month = MONTHS[monthKey];
 
-          prevWeek = apiExpenses[key][monthKey][expenseKey].week;
-        }
+          prevWeek = expense.week;
+        });
 
         year.push(month);
 
-        let keyInt = parseInt(key);
-        let monthKeyInt = parseInt(monthKey);
+        if (key + 1 === apiExpenses.length && monthKey + 1 === rawYear.length) {
+          let currentMonth = new Date().getMonth();
 
-        if (keyInt + 1 === apiExpenses.length && monthKeyInt + 1 === apiExpenses[key].length) {
-          let currentMonth = new Date().getMonth() - 1;
-          let monthKeyInt = parseInt(monthKey);
-
-          if (currentMonth > monthKeyInt) {
-            for (let additionMonthsKey = 0; additionMonthsKey < currentMonth - monthKeyInt; additionMonthsKey++) {
+          if (currentMonth > monthKey) {
+            for (let additionMonthsKey = 0; additionMonthsKey < currentMonth - monthKey; additionMonthsKey++) {
               let emptyMonth = [];
 
-              for (let additionMonthsExpenseKey = 1; additionMonthsExpenseKey < 5; additionMonthsExpenseKey++) {
-                  emptyMonth.push({
-                    value: 0,
-                    week: additionMonthsExpenseKey
-                  });
+              for (let additionMonthsExpenseKey = 0; additionMonthsExpenseKey < 5; additionMonthsExpenseKey++) {
+                emptyMonth.push({
+                  value: 0,
+                  week: additionMonthsExpenseKey
+                });
               }
 
-              emptyMonth[0].month = MONTHS[monthKeyInt + additionMonthsKey + 1];
+              emptyMonth[0].month = MONTHS[monthKey + additionMonthsKey + 1];
 
               year.push(emptyMonth);
             }
 
           }
         }
-      }
+      });
 
       expenses.push(year);
-    }
+    });
 
     return expenses.reverse();
   }
