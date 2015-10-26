@@ -14,7 +14,6 @@ import (
 
 func main() {
   martiniApp := martini.Classic()
-  m.RunOnAddr(":3001")
 
   martiniApp.Use(render.Renderer())
   martiniApp.Use(
@@ -34,5 +33,6 @@ func main() {
   helpers := helpers.Main{}
   helpers.LogSimpleMessage("App starting!")
 
+  martiniApp.RunOnAddr(":5000")
   martiniApp.Run()
 }
