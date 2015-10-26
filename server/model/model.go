@@ -12,7 +12,7 @@ import (
   "gopkg.in/mgo.v2"
   "gopkg.in/mgo.v2/bson"
 
-  "expense_mon/server/helpers"
+  "expense-mon/server/helpers"
 )
 
 

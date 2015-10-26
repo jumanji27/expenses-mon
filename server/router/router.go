@@ -8,7 +8,7 @@ import (
   "github.com/go-martini/martini"
   "github.com/martini-contrib/render"
 
-  "expense_mon/server/model"
+  "expense-mon/server/model"
 )
 
 
