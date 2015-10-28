@@ -11,32 +11,19 @@ export default class Expenses extends Backbone.Model {
       url: 'api/v1/get',
       success: (res) => {
         this.set({
-          expenses: this.format(res.success.expenses)
+          expenses: this.format(res.success.expenses, res.success.unit_measure)
         });
       }
     });
   }
 
-  format(apiExpenses) {
+  format(dbExpenses, unitMeasure) {
     let WEEKS_IN_MONTH = 5,
-      MONTHS = [
-        "January",
-        "February",
-        "March",
-        "April",
-        "May",
-        "June",
-        "July",
-        "August",
-        "September",
-        "October",
-        "November",
-        "December"
-      ];
+      MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
     let expenses = [];
 
-    apiExpenses.map((rawYear, key) => {
+    dbExpenses.map((rawYear, key) => {
       let year = [];
 
       rawYear.map((rawMonth, monthKey) => {
@@ -54,8 +41,12 @@ export default class Expenses extends Backbone.Model {
             }
           }
 
+          let rawAmount = expense.value * unitMeasure,
+            amount = rawAmount.toString().replace(/000$/g, 'k');
+
           month.push({
-            value: expense.value
+            value: expense.value,
+            amount: amount
           });
 
           if (rawMonth.length === expenseKey + 1 && expense.week !== WEEKS_IN_MONTH) {
@@ -72,7 +63,7 @@ export default class Expenses extends Backbone.Model {
 
         year.push(month);
 
-        if (key + 1 === apiExpenses.length && monthKey + 1 === rawYear.length) {
+        if (key + 1 === dbExpenses.length && monthKey + 1 === rawYear.length) {
           let currentMonth = new Date().getMonth();
 
           if (currentMonth > monthKey) {
