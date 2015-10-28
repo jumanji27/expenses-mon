@@ -8,7 +8,7 @@ export default class Expenses extends Backbone.Model {
   req() {
     $.ajax({
       type: 'POST',
-      url: 'api/v1/get',
+      url: '/api/v1/get',
       success: (res) => {
         this.set({
           expenses: this.format(res.success.expenses, res.success.unit_measure)
