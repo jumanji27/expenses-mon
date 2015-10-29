@@ -7,8 +7,8 @@ import (
   "github.com/go-martini/martini"
   "github.com/martini-contrib/render"
 
-  "expense-mon/server/router"
-  "expense-mon/server/helpers"
+  "expenses-mon/server/router"
+  "expenses-mon/server/helpers"
 )
 
 
@@ -19,7 +19,7 @@ func main() {
   martiniApp.Use(
     render.Renderer(
       render.Options{
-        Directory: "server/tmpl",
+        Directory: "server/views",
       },
     ),
   )

@@ -8,7 +8,7 @@ import (
   "github.com/go-martini/martini"
   "github.com/martini-contrib/render"
 
-  "expense-mon/server/model"
+  "expenses-mon/server/models/expenses"
 )
 
 
@@ -23,7 +23,7 @@ func (self *Main) Init(app *martini.ClassicMartini) {
   app.Get(
     "/**",
     func(render render.Render) {
-      render.HTML(httpSuccess, "index", nil)
+      render.HTML(httpSuccess, "main", nil)
     },
   )
 
