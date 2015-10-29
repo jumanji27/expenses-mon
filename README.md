@@ -15,7 +15,7 @@ Install Node (0.12.7)
 
   cd client/build && gulp build
   mkdir ~/mongo && mongod --dbpath ~/mongo
-  go build server/main.go && MARTINI_ENV=production ./main
+  cd server && go build main.go && MARTINI_ENV=production ./main
 
 ##### Run Dev Server
 
