@@ -201,6 +201,8 @@ func (self *Main) Get() map[string]interface{} {
         apiExpenses = append(apiExpenses, [][]map[string]interface{}{})
       }
     }
+
+    fmt.Println(apiExpensesYear);
   }
 
   return map[string]interface{}{
