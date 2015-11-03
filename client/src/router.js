@@ -24,6 +24,10 @@ export default class Router extends Backbone.Router {
 
   main() {
     this.expense_mon.models.expenses = new ExpensesModel();
-    this.expense_mon.views.main.main = new MainPageView(this.expense_mon.models.expenses);
+    this.expense_mon.views.main.main =
+      new MainPageView(
+        this.expense_mon.models.expenses,
+        $('.js_wrapper')
+      );
   }
 }

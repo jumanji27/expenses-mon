@@ -107,6 +107,9 @@ func (self *Main) Get() map[string]interface{} {
         apiExpenses = append(apiExpenses, apiExpensesYear)
 
         apiExpensesYear = [][]map[string]interface{}{}
+        fullYearLoop = true
+      } else {
+        fullYearLoop = false
       }
 
       firstMonthDay :=
@@ -126,7 +129,6 @@ func (self *Main) Get() map[string]interface{} {
       }
 
       apiExpensesMonth = []map[string]interface{}{}
-      fullYearLoop = true
     }
 
     day := dbExpenses[dbExpenseItr].Date.Day()
@@ -187,22 +189,11 @@ func (self *Main) Get() map[string]interface{} {
     currentLoopMonth = month
     currentLoopYear = year
 
-    // Last iteration
-    if dbExpenseItr + 1 == dbExpensesLength {
-      if fullYearLoop != true {
-        apiExpensesYear = append(apiExpensesYear, apiExpensesMonth)
-      }
-
+    // Last iteration and non full year
+    if dbExpenseItr + 1 == dbExpensesLength && fullYearLoop != true {
+      apiExpensesYear = append(apiExpensesYear, apiExpensesMonth)
       apiExpenses = append(apiExpenses, apiExpensesYear)
-
-      // For first empty month new year
-      // Empty array instead null in response — bad API design T_T
-      if currentLoopYear != time.Now().Year() {
-        apiExpenses = append(apiExpenses, [][]map[string]interface{}{})
-      }
     }
-
-    fmt.Println(apiExpensesYear);
   }
 
   return map[string]interface{}{

@@ -1,3 +1,7 @@
 div(class='expense expense_color-level-#{expenses[key][monthKey][expenseKey].value}')
   span
     = expenses[key][monthKey][expenseKey].amount
+  .expense__popup.js_none
+    .expense__popup-plus
+    .expense__popup-minus
+    input(type='text')

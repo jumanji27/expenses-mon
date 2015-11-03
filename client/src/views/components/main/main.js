@@ -1,17 +1,27 @@
+import Year from '../shared/year/main';
+
+
 export default class Main extends Backbone.View {
-  constructor(model) {
+  constructor(model, renderTarget) {
     super();
 
     this.model = model;
 
-    this.listenTo(this.model, 'change', this.render);
+    this.listenTo(
+      this.model,
+      'change',
+      () => {
+        this.render(renderTarget);
+      }
+    );
   }
 
-  render() {
-    $('.js_wrapper').html(
-      tmpl_components_main_main({
-        expenses: this.model.get('expenses')
-      })
+  render(target) {
+    target.html(tmpl_components_main_main());
+
+    new Year(
+      this.model.get('expenses'),
+      $('.js_p-main')
     );
   }
 }
