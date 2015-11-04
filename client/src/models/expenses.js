@@ -5,6 +5,7 @@ export default class Expenses extends Backbone.Model {
     this.req();
   }
 
+
   req() {
     $.ajax({
       type: 'POST',

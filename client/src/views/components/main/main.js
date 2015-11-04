@@ -16,6 +16,7 @@ export default class Main extends Backbone.View {
     );
   }
 
+
   render(target) {
     target.html(tmpl_components_main_main());
 

@@ -1,6 +1,6 @@
-div(class='expense expense_color-level-#{expenses[key][monthKey][expenseKey].value}')
+div(class='expense expense_color-level-#{value} js_expense')
   span
-    = expenses[key][monthKey][expenseKey].amount
+    = amount
   .expense__popup.js_none
     .expense__popup-plus
     .expense__popup-minus
