@@ -6,14 +6,6 @@ export default class Expense extends Backbone.View {
   }
 
 
-  renderAll(target, month) {
-    let self = this;
-
-    month.map((expense, key) => {
-      self.render(target, expense);
-    });
-  }
-
   render(target, expense) {
     target.append(
       tmpl_components_shared_expense_main({

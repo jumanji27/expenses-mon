@@ -1,4 +1,6 @@
 import Year from '../shared/year/main';
+import Month from '../shared/month/main';
+import Expense from '../shared/expense/main';
 
 
 export default class Main extends Backbone.View {
@@ -22,10 +24,30 @@ export default class Main extends Backbone.View {
   render(target) {
     target.html(tmpl_components_main_main());
 
-    new Year(
-      this.model.get('expenses'),
-      $(this.el).find('.js_p-main')
-    );
+    let yearView = new Year(),
+      monthView = new Month(),
+      expenseView = new Expense(),
+      mainEl = $(this.el).find('.js_p-main');
+
+    this.model.get('expenses').map((year, key) => {
+      yearView.render(mainEl);
+
+      year.map((month, monthKey) => {
+        let yearEl = mainEl.children('.js_year').eq(key);
+
+        monthView.render(
+          yearEl,
+          month[0].month
+        );
+
+        month.map((expense) => {
+          expenseView.render(
+            yearEl.children('.js_month').eq(monthKey),
+            expense
+          )
+        });
+      });
+    });
 
     $(this.el).find('.js_popup-start').simplePopup();
   }
