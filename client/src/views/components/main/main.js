@@ -3,7 +3,9 @@ import Year from '../shared/year/main';
 
 export default class Main extends Backbone.View {
   constructor(model, renderTarget) {
-    super();
+    super({
+      el: '.js_wrapper'
+    });
 
     this.model = model;
 
@@ -22,7 +24,9 @@ export default class Main extends Backbone.View {
 
     new Year(
       this.model.get('expenses'),
-      $('.js_p-main')
+      $(this.el).find('.js_p-main')
     );
+
+    $(this.el).find('.js_popup-start').simplePopup();
   }
 }

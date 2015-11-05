@@ -60,7 +60,8 @@ gulp.task('concat_vendor', () => {
         'bower_components/underscore/underscore.js',
         'bower_components/backbone/backbone.js',
         'bower_components/jade/jade.js',
-        'bower_components/jade/runtime.js'
+        'bower_components/jade/runtime.js',
+        'bower_components/simple-jquery-popup/jquery.popup.js'
       ]
     )
     .pipe(concat('vendor.js'))

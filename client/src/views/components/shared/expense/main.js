@@ -1,21 +1,18 @@
 export default class Expense extends Backbone.View {
-  constructor(month, renderTarget) {
-    super();
+  constructor() {
+    super({
+      el: '.js_p-main'
+    });
+  }
 
+
+  renderAll(target, month) {
     let self = this;
 
     month.map((expense, key) => {
-      self.render(
-        renderTarget,
-        expense
-      );
+      self.render(target, expense);
     });
-
-    this.events = {
-      'click .js_expense': 'openPopup'
-    };
   }
-
 
   render(target, expense) {
     target.append(
@@ -25,8 +22,5 @@ export default class Expense extends Backbone.View {
       })
     );
   }
-
-  openPopup() {
-    console.log('xxx');
-  }
 }
+

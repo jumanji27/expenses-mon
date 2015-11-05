@@ -3,17 +3,20 @@ import Month from '../month/main';
 
 export default class Year extends Backbone.View {
   constructor(expenses, renderTarget) {
-    super();
+    super({
+      el: '.js_p-main'
+    });
 
     let self = this;
+    let month = new Month();
 
     expenses.map((year, key) => {
       self.render(renderTarget);
 
-      new Month(
+      month.renderAll(
+        $(self.el).children('.js_year').eq(key),
         year,
-        key,
-        $('.js_year').eq(key)
+        key
       );
     });
   }
