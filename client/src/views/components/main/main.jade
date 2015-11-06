@@ -4,8 +4,13 @@ block content
   .p_main.js_p-main
   .p_main__popup.js_popup.js_popup__slide-top
     .p_main__popup-close.js_popup__close
-      span
-      span
-    .p_main__popup-plus
-    .p_main__popup-minus
+      span +
+    .p_main__popup-content
+      .p_main__popup-content-buttons
+        button.p_main__popup-content-buttons-plus
+          span +
+        button.p_main__popup-content-buttons-minus
+          span -
+      input(type='text', placeholder='Add comment')
+      .p_main__popup-content-status lal
   .p_main__popup-body.js_popup-body.js_popup-body__fadeout
