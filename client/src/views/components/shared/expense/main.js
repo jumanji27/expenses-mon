@@ -1,8 +1,14 @@
 export default class Expense extends Backbone.View {
-  constructor() {
+  constructor(model) {
     super({
-      el: '.js_p-main'
+      el: '.js_l_main',
+      events: {
+        'click .js_popup__add': 'add',
+        'click .js_popup__remove': 'remove'
+      }
     });
+
+    this.model = model;
   }
 
 
@@ -15,5 +21,16 @@ export default class Expense extends Backbone.View {
       })
     );
   }
-}
 
+  add() {
+    let id $(this.el).find('.js_popup-start_active').attr('data-id');
+
+    this.model.addReq();
+  }
+
+  remove() {
+    let id $(this.el).find('.js_popup-start_active').attr('data-id');
+
+    this.model.removeReq();
+  }
+}

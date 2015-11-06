@@ -152,22 +152,25 @@ func (self *Main) Get() map[string]interface{} {
     comment := dbExpenses[dbExpenseItr].Comment
     value := dbExpenses[dbExpenseItr].Value
     monthInt := int(month)
+    monthLength := len(apiExpensesMonth)
     commentLength := len(comment)
 
-    if monthInt == 1 && averageUSDRUBRate[year] > 0 && commentLength > 0 {
-      apiExpense = map[string]interface{}{
-        "id": id,
-        "week": weekNumber,
-        "value": value,
-        "comment": comment,
-        "year_average_usd_rub_rate": averageUSDRUBRate[year],
-      }
-    } else if monthInt == 1 && averageUSDRUBRate[year] > 0 {
-      apiExpense = map[string]interface{}{
-        "id": id,
-        "week": weekNumber,
-        "value": value,
-        "year_average_usd_rub_rate": averageUSDRUBRate[year],
+    if monthInt == 1 && monthLength == 0 && averageUSDRUBRate[year] > 0 {
+      if commentLength > 0 {
+        apiExpense = map[string]interface{}{
+          "id": id,
+          "week": weekNumber,
+          "value": value,
+          "comment": comment,
+          "year_average_usd_rub_rate": averageUSDRUBRate[year],
+        }
+      } else {
+        apiExpense = map[string]interface{}{
+          "id": id,
+          "week": weekNumber,
+          "value": value,
+          "year_average_usd_rub_rate": averageUSDRUBRate[year],
+        }
       }
     } else if commentLength > 0 {
       apiExpense = map[string]interface{}{

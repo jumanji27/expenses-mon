@@ -2,11 +2,11 @@ export default class Expenses extends Backbone.Model {
   constructor() {
     super();
 
-    this.req();
+    this.getReq();
   }
 
 
-  req() {
+  getReq() {
     $.ajax({
       type: 'POST',
       url: '/api/v1/get',
@@ -16,6 +16,14 @@ export default class Expenses extends Backbone.Model {
         });
       }
     });
+  }
+
+  addReq() {
+
+  }
+
+  removeReq() {
+
   }
 
   format(dbExpenses, unitMeasure) {

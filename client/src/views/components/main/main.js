@@ -26,7 +26,7 @@ export default class Main extends Backbone.View {
 
     let yearView = new Year(),
       monthView = new Month(),
-      expenseView = new Expense(),
+      expenseView = new Expense(this.model),
       mainEl = $(this.el).find('.js_p-main');
 
     this.model.get('expenses').map((year, key) => {
