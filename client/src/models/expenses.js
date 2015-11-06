@@ -46,6 +46,7 @@ export default class Expenses extends Backbone.Model {
             amount = rawAmount.toString().replace(/000$/g, 'k');
 
           month.push({
+            id: expense.id,
             value: expense.value,
             amount: amount
           });
