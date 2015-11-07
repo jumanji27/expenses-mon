@@ -241,6 +241,8 @@ func (self *Main) Set(res *http.Request) map[string]interface{} {
     date64 := int64(dbExpense.Date)
     date := time.Unix(date64, 0)
 
+    // Date -> id
+
     if len(dbExpense.Comment) > 0 {
       self.MongoCollection.Insert(
         &DBExpenseSet{date, dbExpense.Value, dbExpense.Comment},

@@ -2,14 +2,18 @@ export default class Expenses extends Backbone.Model {
   constructor() {
     super();
 
+    this.API_HTTP_METHOD = 'POST';
+    this.API_VERSION = '1';
+    this.API_URL = '/api/v' + this.API_VERSION + '/';
+
     this.getReq();
   }
 
 
   getReq() {
     $.ajax({
-      type: 'POST',
-      url: '/api/v1/get',
+      type: this.API_HTTP_METHOD,
+      url: this.API_URL + 'get',
       success: (res) => {
         this.set({
           expenses: this.format(res.success.expenses, res.success.unit_measure)
@@ -18,12 +22,24 @@ export default class Expenses extends Backbone.Model {
     });
   }
 
-  addReq() {
+  setReq(id) {
+    $.ajax({
+      type: this.API_HTTP_METHOD,
+      url: this.API_URL + 'set',
+      success: (res) => {
 
+      }
+    });
   }
 
-  removeReq() {
+  removeReq(id) {
+    $.ajax({
+      type: this.API_HTTP_METHOD,
+      url: this.API_URL + 'remove',
+      success: (res) => {
 
+      }
+    });
   }
 
   format(dbExpenses, unitMeasure) {
