@@ -22,24 +22,46 @@ export default class Expenses extends Backbone.Model {
     });
   }
 
-  setReq(id) {
+  setReq(params) {
+    let self = this;
+
     $.ajax({
       type: this.API_HTTP_METHOD,
       url: this.API_URL + 'set',
+      data: params.forReq,
       success: (res) => {
-
+        self.updateViewStatus(params.view, res);
       }
     });
   }
 
-  removeReq(id) {
+  removeReq(params) {
+    let self = this;
+
     $.ajax({
       type: this.API_HTTP_METHOD,
       url: this.API_URL + 'remove',
+      data: {
+        id: params.id
+      },
       success: (res) => {
-
+        self.updateViewStatus(params.view, res);
       }
     });
+  }
+
+  updateViewStatus(view, res) {
+    let params = {
+      success: res.success
+    }
+
+    if (res.success) {
+      params.text = 'Success!';
+    } else {
+      params.text = res.error;
+    }
+
+    view.updateStatus(params);
   }
 
   format(dbExpenses, unitMeasure) {

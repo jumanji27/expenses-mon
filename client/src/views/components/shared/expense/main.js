@@ -23,14 +23,51 @@ export default class Expense extends Backbone.View {
   }
 
   set() {
-    this.model.addReq(
-      $(this.el).find('.js_popup-start_active').attr('data-id')
-    );
+    let expense = $(this.el).find('.js_popup-start_active'),
+      value =
+        parseInt(
+          expense.attr('data-value')
+        );
+
+    expense.attr('data-value', value + 1);
+
+    let params = {
+      view: this,
+      forReq: {
+        id: expense.attr('data-id')
+      }
+    },
+      comment = $(this.el).find('.js_popup__comment').val();
+
+    if (comment.length > 0) {
+      params.forReq.comment = comment;
+    }
+
+    this.model.setReq(params);
   }
 
   remove() {
-    this.model.removeReq(
-      $(this.el).find('.js_popup-start_active').attr('data-id')
-    );
+    let expense = $(this.el).find('.js_popup-start_active'),
+      value =
+        parseInt(
+          expense.attr('data-value')
+        );
+
+    expense.attr('data-value', value - 1);
+
+    this.model.removeReq({
+      view: this,
+      id: expense.attr('data-id')
+    });
+  }
+
+  updateStatus(params) {
+    let status = $(this.el).find('.js_popup__status');
+
+    if (!params.success) {
+      status.addClass('js_popup__status-error')
+    }
+
+    status.text(params.text);
   }
 }
