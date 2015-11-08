@@ -60,12 +60,9 @@ export default class Main extends Backbone.View {
   popupSet() {
     let expense = $(this.el).find('.js_popup-start_active');
 
-    this.expenseView.updateHTML({
-      expense: expense
-    });
-
     let params = {
-      view: this,
+      page: this,
+      view: this.expenseView,
       forReq: {
         id: expense.attr('data-id')
       }
@@ -80,17 +77,19 @@ export default class Main extends Backbone.View {
   }
 
   popupRemove() {
-    let expense = $(this.el).find('.js_popup-start_active');
+    let expense = $(this.el).find('.js_popup-start_active'),
+      value =
+        parseInt(
+          expense.attr('data-value')
+        );
 
-    this.expenseView.updateHTML({
-      expense: expense,
-      decrement: true
-    });
-
-    this.model.removeReq({
-      view: this,
-      id: expense.attr('data-id')
-    });
+    if (value) {
+      this.model.removeReq({
+        page: this,
+        view: this.expenseView,
+        id: expense.attr('data-id')
+      });
+    }
   }
 
   popupUpdateStatus(params) {

@@ -35,7 +35,9 @@ export default class Expenses extends Backbone.Model {
       url: this.API_URL + 'set',
       data: JSON.stringify(params.forReq),
       success: (res) => {
-        self.sendStatusToView(params.view, res);
+        self.sendStatusToView(params.page, res);
+
+        params.view.updateHTML();
       }
     });
   }
@@ -51,7 +53,11 @@ export default class Expenses extends Backbone.Model {
           id: params.id
         }),
       success: (res) => {
-        self.sendStatusToView(params.view, res);
+        self.sendStatusToView(params.page, res);
+
+        params.view.updateHTML({
+          decrement: true
+        });
       }
     });
   }

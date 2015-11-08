@@ -1,7 +1,7 @@
 export default class Expense extends Backbone.View {
   constructor(model) {
     super({
-      el: '.js_p_main'
+      el: '.js_l_main'
     });
 
     this.model = model;
@@ -19,21 +19,28 @@ export default class Expense extends Backbone.View {
   }
 
   updateHTML(params) {
-    let value =
-      parseInt(
-        params.expense.attr('data-value')
-      );
+    let expense = $(this.el).find('.js_popup-start_active'),
+      value =
+        parseInt(
+          expense.attr('data-value')
+        );
 
-    if (!params.decrement) {
-      value++;
-    } else {
+    if (params && params.decrement) {
       value--;
+    } else {
+      value++;
     }
 
     let rawAmount = value * this.model.get('unitMeasure'),
-      amount = rawAmount.toString().replace(/000$/g, 'k');
+      amount = rawAmount.toString().replace(/000$/g, 'k'),
+      amountEl = expense.children('.js_expense__amount');
 
-    params.expense.attr('data-value', value);
-    params.expense.children('.js_expense__amount').text(amount);
+    expense.attr('data-value', value);
+
+    if (value) {
+      amountEl.text(amount);
+    } else {
+      amountEl.text('');
+    }
   }
 }
