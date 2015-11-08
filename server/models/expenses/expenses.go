@@ -288,6 +288,8 @@ func (self *Main) Remove(res *http.Request) map[string]interface{} {
     &reqExpense,
   )
 
+  // Remove -> Update
+
   if len(reqExpense.Id) > 0 {
     dbExpense := DBExpense{}
     self.MongoCollection.Find(

@@ -11,12 +11,17 @@ export default class Expenses extends Backbone.Model {
 
 
   getReq() {
+    let self = this;
+
     $.ajax({
       type: this.API_HTTP_METHOD,
       url: this.API_URL + 'get',
       success: (res) => {
-        this.set({
-          expenses: this.format(res.success.expenses, res.success.unit_measure)
+        self.set({
+          unitMeasure: res.success.unit_measure
+        });
+        self.set({
+          expenses: self.format(self, res.success.expenses)
         });
       }
     });
@@ -28,9 +33,9 @@ export default class Expenses extends Backbone.Model {
     $.ajax({
       type: this.API_HTTP_METHOD,
       url: this.API_URL + 'set',
-      data: params.forReq,
+      data: JSON.stringify(params.forReq),
       success: (res) => {
-        self.updateViewStatus(params.view, res);
+        self.sendStatusToView(params.view, res);
       }
     });
   }
@@ -41,16 +46,17 @@ export default class Expenses extends Backbone.Model {
     $.ajax({
       type: this.API_HTTP_METHOD,
       url: this.API_URL + 'remove',
-      data: {
-        id: params.id
-      },
+      data:
+        JSON.stringify({
+          id: params.id
+        }),
       success: (res) => {
-        self.updateViewStatus(params.view, res);
+        self.sendStatusToView(params.view, res);
       }
     });
   }
 
-  updateViewStatus(view, res) {
+  sendStatusToView(view, res) {
     let params = {
       success: res.success
     }
@@ -61,10 +67,10 @@ export default class Expenses extends Backbone.Model {
       params.text = res.error;
     }
 
-    view.updateStatus(params);
+    view.popupUpdateStatus(params);
   }
 
-  format(dbExpenses, unitMeasure) {
+  format(self, dbExpenses) {
     let WEEKS_IN_MONTH = 5,
       MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -88,7 +94,7 @@ export default class Expenses extends Backbone.Model {
             }
           }
 
-          let rawAmount = expense.value * unitMeasure,
+          let rawAmount = expense.value * self.get('unitMeasure'),
             amount = rawAmount.toString().replace(/000$/g, 'k');
 
           month.push({
