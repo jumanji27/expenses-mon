@@ -8,7 +8,7 @@ Install Node (0.12.7)
 
 ##### Next build and run (all paths from root of project sources)
 
-    cd server && go get github.com/go-martini/martini github.com/martini-contrib/render gopkg.in/mgo.v2 gopkg.in/mgo.v2/bson
+    cp -r server/vendor ~/go/src
     cd client/builder && npm install && bower install && sudo npm install -g gulp bower
 
 ##### Build and run
