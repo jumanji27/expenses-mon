@@ -24,7 +24,7 @@ type Main struct {
   DBExpenseRequred
   DBExpenseSet
   DBExpenseSetRequred
-  ReqSet
+  ChangeReq
 }
 
 const (
@@ -221,44 +221,69 @@ type DBExpenseSetRequred struct {
   Value int
 }
 
-type ReqSet struct {
-  Date int `json: "date"`
-  Value int `json: "value"`
+type ChangeReq struct {
+  Id string `json: "id"`
   Comment string `json: "comment"`
 }
 
 func (self *Main) Set(res *http.Request) map[string]interface{} {
-  dbExpense := ReqSet{}
+  reqExpense := ChangeReq{}
 
   json.Unmarshal(
     []byte(
       self.ProcessReqBody(res),
     ),
-    &dbExpense,
+    &reqExpense,
   )
 
-  if dbExpense.Value > 0 {
-    date64 := int64(dbExpense.Date)
-    date := time.Unix(date64, 0)
+  if len(reqExpense.Id) > 0 {
+      dbExpense := DBExpense{}
+      self.MongoCollection.Find(
+        bson.M{
+          "_id": bson.ObjectIdHex(reqExpense.Id),
+        },
+      ).One(&dbExpense)
 
-    // Date -> id
+    if len(dbExpense.Id) > 0 {
+      if len(reqExpense.Comment) > 0 {
+        self.MongoCollection.Update(
+          bson.M{
+            "_id": bson.ObjectIdHex(reqExpense.Id),
+          },
+          bson.M{
+            "$set":
+              bson.M{
+                "value": dbExpense.Value + 1,
+                "commit": reqExpense.Comment,
+              },
+          },
+        )
+      } else {
+        self.MongoCollection.Update(
+          bson.M{
+            "_id": bson.ObjectIdHex(reqExpense.Id),
+          },
+          bson.M{
+            "$set":
+              bson.M{
+                "value": dbExpense.Value + 1,
+              },
+          },
+        )
+      }
 
-    if len(dbExpense.Comment) > 0 {
-      self.MongoCollection.Insert(
-        &DBExpenseSet{date, dbExpense.Value, dbExpense.Comment},
+      // No generics for common method T_T
+      fmt.Printf(
+        "%s | Added to DB: %s\n",
+        time.Now().Format(LogTimeFormat),
+        dbExpense,
       )
     } else {
-      self.MongoCollection.Insert(
-        &DBExpenseSetRequred{date, dbExpense.Value},
-      )
+      return map[string]interface{}{
+        "success": nil,
+        "error": "Did't found this expense",
+      }
     }
-
-    // No generics for common method T_T
-    fmt.Printf(
-      "%s | Added to DB: %s\n",
-      time.Now().Format(LogTimeFormat),
-      dbExpense,
-    )
 
     return map[string]interface{}{
       "success": true,
@@ -274,12 +299,8 @@ func (self *Main) Set(res *http.Request) map[string]interface{} {
   }
 }
 
-type ReqRemove struct {
-  Id string `json: "id"`
-}
-
 func (self *Main) Remove(res *http.Request) map[string]interface{} {
-  reqExpense := ReqRemove{}
+  reqExpense := ChangeReq{}
 
   json.Unmarshal(
     []byte(
@@ -288,23 +309,27 @@ func (self *Main) Remove(res *http.Request) map[string]interface{} {
     &reqExpense,
   )
 
-  // Remove -> Update
-
   if len(reqExpense.Id) > 0 {
-    dbExpense := DBExpense{}
-    self.MongoCollection.Find(
-      bson.M{
-        "_id": bson.ObjectIdHex(reqExpense.Id),
-      },
-    ).One(&dbExpense)
-
-    self.MongoCollection.Remove(
-      bson.M{
-        "_id": bson.ObjectIdHex(reqExpense.Id),
-      },
-    )
+      dbExpense := DBExpense{}
+      self.MongoCollection.Find(
+        bson.M{
+          "_id": bson.ObjectIdHex(reqExpense.Id),
+        },
+      ).One(&dbExpense)
 
     if len(dbExpense.Id) > 0 {
+      self.MongoCollection.Update(
+        bson.M{
+          "_id": bson.ObjectIdHex(reqExpense.Id),
+        },
+        bson.M{
+          "$set":
+            bson.M{
+              "value": dbExpense.Value - 1,
+            },
+        },
+      )
+
       // No generics for common method T_T
       fmt.Printf(
         "%s | Removed from DB: %s\n",
