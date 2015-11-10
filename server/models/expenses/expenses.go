@@ -22,8 +22,6 @@ type Main struct {
   MongoSession *mgo.Session
   DBExpense
   DBExpenseRequred
-  DBExpenseSet
-  DBExpenseSetRequred
   ChangeReq
 }
 
@@ -210,15 +208,21 @@ func (self *Main) Get() map[string]interface{} {
   }
 }
 
-type DBExpenseSet struct {
-  Date time.Time
-  Value int
-  Comment string
+func (self *Main) Set(res *http.Request) map[string]interface{} {
+  return self.ChangeRecord(res, "set")
 }
 
-type DBExpenseSetRequred struct {
-  Date time.Time
-  Value int
+func (self *Main) Remove(res *http.Request) map[string]interface{} {
+  return self.ChangeRecord(res, "remove")
+}
+
+func (self *Main) ProcessReqBody(res *http.Request) string {
+  bodyUInt8, err := ioutil.ReadAll(res.Body)
+  if err != nil {
+    self.Helpers.LogWarning(err)
+  }
+
+  return strings.Replace(string(bodyUInt8), "'", "\"", -1)
 }
 
 type ChangeReq struct {
@@ -226,7 +230,7 @@ type ChangeReq struct {
   Comment string `json: "comment"`
 }
 
-func (self *Main) Set(res *http.Request) map[string]interface{} {
+func (self *Main) ChangeRecord(res *http.Request, action string) map[string]interface{} {
   reqExpense := ChangeReq{}
 
   json.Unmarshal(
@@ -245,6 +249,17 @@ func (self *Main) Set(res *http.Request) map[string]interface{} {
       ).One(&dbExpense)
 
     if len(dbExpense.Id) > 0 {
+      var value int
+      var logMessage string
+
+      if action == "set" {
+        value = dbExpense.Value + 1
+        logMessage = "%s | Added to DB: %s\n"
+      } else if action == "remove" {
+        value = dbExpense.Value - 1
+        logMessage = "%s | Removed from DB: %s\n"
+      }
+
       if len(reqExpense.Comment) > 0 {
         self.MongoCollection.Update(
           bson.M{
@@ -253,7 +268,7 @@ func (self *Main) Set(res *http.Request) map[string]interface{} {
           bson.M{
             "$set":
               bson.M{
-                "value": dbExpense.Value + 1,
+                "value": value,
                 "commit": reqExpense.Comment,
               },
           },
@@ -266,7 +281,7 @@ func (self *Main) Set(res *http.Request) map[string]interface{} {
           bson.M{
             "$set":
               bson.M{
-                "value": dbExpense.Value + 1,
+                "value": value,
               },
           },
         )
@@ -274,7 +289,7 @@ func (self *Main) Set(res *http.Request) map[string]interface{} {
 
       // No generics for common method T_T
       fmt.Printf(
-        "%s | Added to DB: %s\n",
+        logMessage,
         time.Now().Format(LogTimeFormat),
         dbExpense,
       )
@@ -297,71 +312,4 @@ func (self *Main) Set(res *http.Request) map[string]interface{} {
       "error": "Data validation error",
     }
   }
-}
-
-func (self *Main) Remove(res *http.Request) map[string]interface{} {
-  reqExpense := ChangeReq{}
-
-  json.Unmarshal(
-    []byte(
-      self.ProcessReqBody(res),
-    ),
-    &reqExpense,
-  )
-
-  if len(reqExpense.Id) > 0 {
-      dbExpense := DBExpense{}
-      self.MongoCollection.Find(
-        bson.M{
-          "_id": bson.ObjectIdHex(reqExpense.Id),
-        },
-      ).One(&dbExpense)
-
-    if len(dbExpense.Id) > 0 {
-      self.MongoCollection.Update(
-        bson.M{
-          "_id": bson.ObjectIdHex(reqExpense.Id),
-        },
-        bson.M{
-          "$set":
-            bson.M{
-              "value": dbExpense.Value - 1,
-            },
-        },
-      )
-
-      // No generics for common method T_T
-      fmt.Printf(
-        "%s | Removed from DB: %s\n",
-        time.Now().Format(LogTimeFormat),
-        reqExpense,
-      )
-
-      return map[string]interface{}{
-        "success": true,
-        "error": nil,
-      }
-    } else {
-      return map[string]interface{}{
-        "success": nil,
-        "error": "Did't found this expense",
-      }
-    }
-  } else {
-    self.Helpers.LogSimpleMessage("Failed request, validation error")
-
-    return map[string]interface{}{
-      "success": nil,
-      "error": "Data validation error",
-    }
-  }
-}
-
-func (self *Main) ProcessReqBody(res *http.Request) string {
-  bodyUInt8, err := ioutil.ReadAll(res.Body)
-  if err != nil {
-    self.Helpers.LogWarning(err)
-  }
-
-  return strings.Replace(string(bodyUInt8), "'", "\"", -1)
 }
