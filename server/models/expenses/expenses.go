@@ -61,6 +61,8 @@ type DBExpenseRequred struct {
 const (
   UnitMeasure = 5000
   Currency = "RUB"
+  WeekTimestamp = 7 * 24 * 60 * 60
+  WeeksInMonth = 5 // UI restrictions
 )
 
 func (self *Main) Get() map[string]interface{} {
@@ -69,12 +71,18 @@ func (self *Main) Get() map[string]interface{} {
 
   dbExpensesLength := len(dbExpenses)
 
-  apiExpensesMonth := []map[string]interface{}{}
-  apiExpensesYear := [][]map[string]interface{}{}
-  apiExpenses := [][][]map[string]interface{}{}
+  expensesMonth := []map[string]interface{}{}
+  expensesYear := [][]map[string]interface{}{}
+  expenses := [][][]map[string]interface{}{}
 
-  currentLoopMonth := dbExpenses[0].Date.Month()
-  currentLoopYear := dbExpenses[0].Date.Year()
+
+  // In first iteration == current
+  prevMonth := dbExpenses[0].Date.Month()
+  prevYear := dbExpenses[0].Date.Year()
+  prevWeekNumber := 0
+  weekNumber := 0
+  gap := 0
+
   monthOffset := int(dbExpenses[0].Date.Weekday()) - 1  // Sunday is last weekday in EU
 
   var fullYearLoop bool
@@ -95,16 +103,37 @@ func (self *Main) Get() map[string]interface{} {
 
   // Loop is depended from DB struct (year must begin from january)
   for dbExpenseItr := 0; dbExpenseItr < dbExpensesLength; dbExpenseItr++ {
-    month := dbExpenses[dbExpenseItr].Date.Month()
+    timestamp := int(dbExpenses[dbExpenseItr].Date.Unix())
     year := dbExpenses[dbExpenseItr].Date.Year()
+    month := dbExpenses[dbExpenseItr].Date.Month()
+    day := dbExpenses[dbExpenseItr].Date.Day()
 
-    if month != currentLoopMonth {
-      apiExpensesYear = append(apiExpensesYear, apiExpensesMonth)
+    if month != prevMonth {
+      extraEndOfWeekExpenses := WeeksInMonth - prevWeekNumber
 
-      if year != currentLoopYear {
-        apiExpenses = append(apiExpenses, apiExpensesYear)
+      for extraItr := 0; extraItr < extraEndOfWeekExpenses; extraItr++ {
+        week := prevWeekNumber + extraItr + 1
 
-        apiExpensesYear = [][]map[string]interface{}{}
+        expensesMonth =
+          append(
+            expensesMonth,
+            map[string]interface{}{
+              "week": week,
+              "date": timestamp - gap * WeekTimestamp,
+            },
+          )
+
+        if extraItr + 1 == extraEndOfWeekExpenses {
+          prevWeekNumber = week
+        }
+      }
+
+      expensesYear = append(expensesYear, expensesMonth)
+
+      if year != prevYear {
+        expenses = append(expenses, expensesYear)
+
+        expensesYear = [][]map[string]interface{}{}
         fullYearLoop = true
       } else {
         fullYearLoop = false
@@ -112,9 +141,7 @@ func (self *Main) Get() map[string]interface{} {
 
       firstMonthDay :=
         time.Unix(
-          int64(
-            int(dbExpenses[dbExpenseItr].Date.Unix()) - (dbExpenses[dbExpenseItr].Date.Day() - 1) * OneDayTimestamp,
-          ),
+          int64(timestamp - (day - 1) * OneDayTimestamp),
           0,
         )
 
@@ -126,11 +153,8 @@ func (self *Main) Get() map[string]interface{} {
         firstDayOfMonthIsSunday = true
       }
 
-      apiExpensesMonth = []map[string]interface{}{}
+      expensesMonth = []map[string]interface{}{}
     }
-
-    day := dbExpenses[dbExpenseItr].Date.Day()
-    var weekNumber int
 
     if firstDayOfMonthIsSunday == true && day == 1 {
       weekNumber = 1
@@ -138,9 +162,8 @@ func (self *Main) Get() map[string]interface{} {
       weekNumber = (monthOffset + day) / 7 + 1
     }
 
-    // UI possible restrictions
-    if weekNumber > 5 {
-      weekNumber = 5
+    if weekNumber > WeeksInMonth {
+      weekNumber = WeeksInMonth
     }
 
     firstDayOfMonthIsSunday = false
@@ -150,51 +173,92 @@ func (self *Main) Get() map[string]interface{} {
     comment := dbExpenses[dbExpenseItr].Comment
     value := dbExpenses[dbExpenseItr].Value
     monthInt := int(month)
-    monthLength := len(apiExpensesMonth)
+    monthLength := len(expensesMonth)
     commentLength := len(comment)
 
     if monthInt == 1 && monthLength == 0 && averageUSDRUBRate[year] > 0 {
       if commentLength > 0 {
-        apiExpense = map[string]interface{}{
+        apiExpense =
+          map[string]interface{}{
+            "id": id,
+            "week": weekNumber,
+            "value": value,
+            "comment": comment,
+            "year_average_usd_rub_rate": averageUSDRUBRate[year],
+          }
+      } else {
+        apiExpense =
+          map[string]interface{}{
+            "id": id,
+            "week": weekNumber,
+            "value": value,
+            "year_average_usd_rub_rate": averageUSDRUBRate[year],
+          }
+      }
+    } else if commentLength > 0 {
+      apiExpense =
+        map[string]interface{}{
           "id": id,
           "week": weekNumber,
           "value": value,
           "comment": comment,
-          "year_average_usd_rub_rate": averageUSDRUBRate[year],
         }
-      } else {
-        apiExpense = map[string]interface{}{
+    } else {
+      apiExpense =
+        map[string]interface{}{
           "id": id,
           "week": weekNumber,
           "value": value,
-          "year_average_usd_rub_rate": averageUSDRUBRate[year],
         }
+    }
+
+    gap = weekNumber - prevWeekNumber
+
+    if gap > 1 {
+      for extraItr := 1; extraItr < gap; extraItr++ {
+        expensesMonth =
+          append(
+            expensesMonth,
+            map[string]interface{}{
+              "week": weekNumber - gap + 1,
+              "date": timestamp - gap * WeekTimestamp,
+            },
+          )
       }
-    } else if commentLength > 0 {
-      apiExpense = map[string]interface{}{
-        "id": id,
-        "week": weekNumber,
-        "value": value,
-        "comment": comment,
-      }
-    } else {
-      apiExpense = map[string]interface{}{
-        "id": id,
-        "week": weekNumber,
-        "value": value,
+    } else if gap < 0 {
+      for extraItr := 1; extraItr < weekNumber; extraItr++ {
+        expensesMonth =
+          append(
+            expensesMonth,
+            map[string]interface{}{
+              "week": extraItr,
+              "date": timestamp - extraItr * WeekTimestamp,
+            },
+          )
       }
     }
 
-    apiExpensesMonth = append(apiExpensesMonth, apiExpense)
+    expensesMonth = append(expensesMonth, apiExpense)
 
-    currentLoopMonth = month
-    currentLoopYear = year
-
-    // Last iteration and non full year
+    // Non full year
     if dbExpenseItr + 1 == dbExpensesLength && fullYearLoop != true {
-      apiExpensesYear = append(apiExpensesYear, apiExpensesMonth)
-      apiExpenses = append(apiExpenses, apiExpensesYear)
+      expensesYear = append(expensesYear, expensesMonth)
+      expenses = append(expenses, expensesYear)
     }
+
+    prevMonth = month
+    prevYear = year
+    prevWeekNumber = weekNumber
+  }
+
+  apiExpenses := [][][]map[string]interface{}{}
+
+  for key := range expenses {
+    apiExpenses =
+      append(
+        apiExpenses,
+        expenses[len(expenses) - key - 1],
+      )
   }
 
   return map[string]interface{}{
@@ -287,7 +351,6 @@ func (self *Main) ChangeRecord(res *http.Request, action string) map[string]inte
         )
       }
 
-      // No generics for common method T_T
       fmt.Printf(
         logMessage,
         time.Now().Format(LogTimeFormat),
