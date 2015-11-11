@@ -277,11 +277,11 @@ func (self *Main) Get() map[string]interface{} {
 }
 
 func (self *Main) Set(res *http.Request) map[string]interface{} {
-  return self.ChangeRecord(res, "set")
+  return self.ChangeRecord(res, "Set")
 }
 
 func (self *Main) Remove(res *http.Request) map[string]interface{} {
-  return self.ChangeRecord(res, "remove")
+  return self.ChangeRecord(res, "Remove")
 }
 
 func (self *Main) ProcessReqBody(res *http.Request) string {
@@ -316,12 +316,14 @@ func (self *Main) ChangeRecord(res *http.Request, action string) map[string]inte
       },
     ).One(&dbExpense)
 
+    // Add and Remove not only Update
+
     if len(dbExpense.Id) > 0 {
       var value int
 
-      if action == "set" {
+      if action == "Set" {
         value = dbExpense.Value + 1
-      } else if action == "remove" {
+      } else if action == "Remove" {
         value = dbExpense.Value - 1
       }
 
