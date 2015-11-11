@@ -15,27 +15,23 @@ const (
 )
 
 
-func (self *Main) LogWarning(err error) {
-  fmt.Printf(
-    "%s | Warning: %s\n",
-    time.Now().Format(LogTimeFormat),
-    err.Error(),
-  )
-}
+func (self *Main) CreateEvent(title string, message string) {
+  if title == "Log" {
+    fmt.Printf(
+      "%s | %s\n",
+      time.Now().Format(LogTimeFormat),
+      message,
+    )
+  } else {
+    fmt.Printf(
+      "%s | %s: %s\n",
+      time.Now().Format(LogTimeFormat),
+      title,
+      message,
+    )
+  }
 
-func (self *Main) LogError(err error) {
-  fmt.Printf(
-    "%s | Error: %s\n",
-    time.Now().Format(LogTimeFormat),
-    err.Error(),
-  )
-  os.Exit(1)
-}
-
-func (self *Main) LogSimpleMessage(message string) {
-  fmt.Printf(
-    "%s | %s\n",
-    time.Now().Format(LogTimeFormat),
-    message,
-  )
+  if title == "Error" {
+    os.Exit(1)
+  }
 }

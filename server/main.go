@@ -31,7 +31,7 @@ func main() {
   router.Init(martiniApp)
 
   helpers := helpers.Main{}
-  helpers.LogSimpleMessage("App starting!")
+  helpers.CreateEvent("Log", "EM starting!")
 
   martiniApp.RunOnAddr(":5000")
   martiniApp.Run()

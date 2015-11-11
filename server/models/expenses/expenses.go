@@ -1,7 +1,7 @@
 package model
 
 import (
-  "fmt"
+  // "fmt"
   // "reflect"
   "time"
   "net/http"
@@ -36,13 +36,13 @@ func (self *Main) Init() {
 
   session, err := mgo.Dial("localhost:27017")
   if err != nil {
-    self.Helpers.LogError(err)
+    self.Helpers.CreateEvent("Error", err.Error())
   }
 
   self.MongoSession = session
   self.MongoCollection = session.DB("money_mon").C("index")
 
-  self.Helpers.LogSimpleMessage("Mongo ready")
+  self.Helpers.CreateEvent("Log", "Mongo ready")
 }
 
 type DBExpense struct {
@@ -287,7 +287,7 @@ func (self *Main) Remove(res *http.Request) map[string]interface{} {
 func (self *Main) ProcessReqBody(res *http.Request) string {
   bodyUInt8, err := ioutil.ReadAll(res.Body)
   if err != nil {
-    self.Helpers.LogWarning(err)
+    self.Helpers.CreateEvent("Warning", err.Error())
   }
 
   return strings.Replace(string(bodyUInt8), "'", "\"", -1)
@@ -309,57 +309,47 @@ func (self *Main) ChangeRecord(res *http.Request, action string) map[string]inte
   )
 
   if len(reqExpense.Id) > 0 {
-      dbExpense := DBExpense{}
-      self.MongoCollection.Find(
-        bson.M{
-          "_id": bson.ObjectIdHex(reqExpense.Id),
-        },
-      ).One(&dbExpense)
+    dbExpense := DBExpense{}
+    self.MongoCollection.Find(
+      bson.M{
+        "_id": bson.ObjectIdHex(reqExpense.Id),
+      },
+    ).One(&dbExpense)
 
     if len(dbExpense.Id) > 0 {
       var value int
-      var logMessage string
 
       if action == "set" {
         value = dbExpense.Value + 1
-        logMessage = "%s | Added to DB: %s\n"
       } else if action == "remove" {
         value = dbExpense.Value - 1
-        logMessage = "%s | Removed from DB: %s\n"
       }
+
+      var expense bson.M
 
       if len(reqExpense.Comment) > 0 {
-        self.MongoCollection.Update(
+        expense =
           bson.M{
-            "_id": bson.ObjectIdHex(reqExpense.Id),
-          },
-          bson.M{
-            "$set":
-              bson.M{
-                "value": value,
-                "commit": reqExpense.Comment,
-              },
-          },
-        )
+            "value": value,
+            "commit": reqExpense.Comment,
+          }
       } else {
-        self.MongoCollection.Update(
+        expense =
           bson.M{
-            "_id": bson.ObjectIdHex(reqExpense.Id),
-          },
-          bson.M{
-            "$set":
-              bson.M{
-                "value": value,
-              },
-          },
-        )
+            "value": value,
+          }
       }
 
-      fmt.Printf(
-        logMessage,
-        time.Now().Format(LogTimeFormat),
-        dbExpense,
+      self.MongoCollection.Update(
+        bson.M{
+          "_id": bson.ObjectIdHex(reqExpense.Id),
+        },
+        bson.M{
+          "$set": expense,
+        },
       )
+
+      self.Helpers.CreateEvent("Log", "Updated expense")
     } else {
       return map[string]interface{}{
         "success": nil,
@@ -372,7 +362,7 @@ func (self *Main) ChangeRecord(res *http.Request, action string) map[string]inte
       "error": nil,
     }
   } else {
-    self.Helpers.LogSimpleMessage("Failed request, validation error")
+    self.Helpers.CreateEvent("Log", "Failed request, validation error")
 
     return map[string]interface{}{
       "success": nil,
