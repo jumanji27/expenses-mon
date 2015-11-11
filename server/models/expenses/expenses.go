@@ -101,7 +101,6 @@ func (self *Main) Get() map[string]interface{} {
     firstDayOfMonthIsSunday = true
   }
 
-  // Loop is depended from DB struct (year must begin from january)
   for dbExpenseItr := 0; dbExpenseItr < dbExpensesLength; dbExpenseItr++ {
     timestamp := int(dbExpenses[dbExpenseItr].Date.Unix())
     year := dbExpenses[dbExpenseItr].Date.Year()
@@ -243,7 +242,12 @@ func (self *Main) Get() map[string]interface{} {
     // Non full year
     if dbExpenseItr + 1 == dbExpensesLength && fullYearLoop != true {
       expensesYear = append(expensesYear, expensesMonth)
+
+      // Fill empty months
+
       expenses = append(expenses, expensesYear)
+
+      // Fill empty years
     }
 
     prevMonth = month
