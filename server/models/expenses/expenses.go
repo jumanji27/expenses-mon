@@ -1,7 +1,7 @@
 package model
 
 import (
-  // "fmt"
+  "fmt"
   // "reflect"
   "time"
   "net/http"
@@ -100,17 +100,19 @@ func (self *Main) Get() map[string]interface{} {
       // What if we have month gap one-two and more months?
       extraEndOfWeekExpenses := WeeksInMonth - prevWeekNumber
 
-      for extraItr := 0; extraItr < extraEndOfWeekExpenses; extraItr++ {
-        expensesMonth =
-          append(
-            expensesMonth,
-            map[string]interface{}{
-              "date": timestamp - gap * WeekTimestamp,
-            },
-          )
+      if extraEndOfWeekExpenses > 0 {
+        for extraItr := 0; extraItr < extraEndOfWeekExpenses; extraItr++ {
+          expensesMonth =
+            append(
+              expensesMonth,
+              map[string]interface{}{
+                "date": timestamp - gap * WeekTimestamp,
+              },
+            )
 
-        if extraItr + 1 == extraEndOfWeekExpenses {
-          prevWeekNumber = prevWeekNumber + extraItr + 1
+          if extraItr + 1 == extraEndOfWeekExpenses {
+            prevWeekNumber = prevWeekNumber + extraItr + 1
+          }
         }
       }
 
@@ -181,7 +183,7 @@ func (self *Main) Get() map[string]interface{} {
             },
           )
       }
-    } else if gap < 0 {
+    } else if gap < 1 {
       for extraItr := 1; extraItr < weekNumber; extraItr++ {
         expensesMonth =
           append(
@@ -277,7 +279,7 @@ func (self *Main) Get() map[string]interface{} {
 }
 
 func (self *Main) GetWeekNumberFromDate(date time.Time) int {
-  offset := int(date.Weekday()) - 1 // Sunday is last weekday in EU
+  offset := int(date.Weekday()) - date.Day() // Sunday is last weekday in EU
   day := date.Day()
 
   var firstDayOfMonthIsSunday bool
