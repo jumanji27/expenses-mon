@@ -1,4 +1,4 @@
-package model
+package expensesModel
 
 import (
   // "fmt"
@@ -62,9 +62,11 @@ const (
   Currency = "RUB"
   DayTimestamp = 1 * 24 * 60 * 60
   WeekTimestamp = 7 * DayTimestamp
+  MinMonthTimestamp = 28 * DayTimestamp
+  MonthsInYear = 12
 )
 
-func (self *Main) Get() map[string]interface{} {
+func (self *Main) GetHandler() map[string]interface{} {
   dbExpenses := []DBExpense{}
   self.MongoCollection.Find(nil).All(&dbExpenses)
 
@@ -78,16 +80,26 @@ func (self *Main) Get() map[string]interface{} {
   prevMonth := dbExpenses[0].Date.Month()
   prevYear := dbExpenses[0].Date.Year()
 
+  var weekNumber int
   var prevWeekNumber int
+  var firstDayOfMonthIsSunday bool
   var gap int
   var fullYearLoop bool
 
-  // Handle fill map
+  // Move to db
   averageUSDRUBRate :=
     map[int]float32{
       2013: 31.9,
       2014: 38.6,
     }
+
+  monthOffset := int(dbExpenses[0].Date.Weekday()) - 1  // Sunday is last weekday in EU
+
+  // Sunday is last weekday in EU
+  if monthOffset < 0 {
+    monthOffset = 6
+    firstDayOfMonthIsSunday = true
+  }
 
   for dbExpenseItr := 0; dbExpenseItr < dbExpensesLength; dbExpenseItr++ {
     expense := dbExpenses[dbExpenseItr]
@@ -95,28 +107,15 @@ func (self *Main) Get() map[string]interface{} {
     timestamp := int(date.Unix())
     year := date.Year()
     month := date.Month()
+    monthInt := int(month)
+    day := date.Day()
 
     if month != prevMonth {
-      // What if we have month gap one-two and more months?
-      extraEndOfWeekExpenses := WeeksInMonth - prevWeekNumber
-
-      if extraEndOfWeekExpenses > 0 {
-        for extraItr := 0; extraItr < extraEndOfWeekExpenses; extraItr++ {
-          expensesMonth =
-            append(
-              expensesMonth,
-              map[string]interface{}{
-                "date": timestamp - gap * WeekTimestamp,
-              },
-            )
-
-          if extraItr + 1 == extraEndOfWeekExpenses {
-            prevWeekNumber = prevWeekNumber + extraItr + 1
-          }
-        }
-      }
-
-      expensesYear = append(expensesYear, expensesMonth)
+      expensesYear =
+        append(
+          expensesYear,
+          self.addEmptyExpenses(expensesMonth, weekNumber, timestamp, gap, true),
+        )
 
       if year != prevYear {
         expenses = append(expenses, expensesYear)
@@ -127,13 +126,39 @@ func (self *Main) Get() map[string]interface{} {
         fullYearLoop = false
       }
 
+      firstMonthDay :=
+        time.Unix(
+          int64(timestamp - (day - 1) * DayTimestamp),
+          0,
+        )
+
+      monthOffset = int(firstMonthDay.Weekday()) - 1
+
+      // Sunday is last weekday in EU
+      if monthOffset < 0 {
+        monthOffset = 6
+        firstDayOfMonthIsSunday = true
+      }
+
       expensesMonth = []map[string]interface{}{}
     }
+
+    if firstDayOfMonthIsSunday == true && day == 1 {
+      weekNumber = 1
+    } else {
+      weekNumber = (monthOffset + day) / 7 + 1
+    }
+
+    if weekNumber > WeeksInMonth {
+      weekNumber = WeeksInMonth
+    }
+
+    firstDayOfMonthIsSunday = false
 
     apiExpense := map[string]interface{}{}
     commentLength := len(expense.Comment)
 
-    if int(month) == 1 && len(expensesMonth) == 0 && averageUSDRUBRate[year] > 0 {
+    if monthInt == 1 && len(expensesMonth) == 0 && averageUSDRUBRate[year] > 0 {
       if commentLength > 0 {
         apiExpense =
           map[string]interface{}{
@@ -165,13 +190,7 @@ func (self *Main) Get() map[string]interface{} {
         }
     }
 
-    weekNumber := self.GetWeekNumberFromDate(date)
-
-    if prevWeekNumber > 0 {
-      gap = weekNumber - prevWeekNumber
-    } else {
-      gap = weekNumber
-    }
+    gap = weekNumber - prevWeekNumber
 
     if gap > 1 {
       for extraItr := 1; extraItr < gap; extraItr++ {
@@ -183,7 +202,7 @@ func (self *Main) Get() map[string]interface{} {
             },
           )
       }
-    } else if gap < 1 {
+    } else if gap < 0 {
       for extraItr := 1; extraItr < weekNumber; extraItr++ {
         expensesMonth =
           append(
@@ -199,57 +218,57 @@ func (self *Main) Get() map[string]interface{} {
 
     // Non full year
     if dbExpenseItr + 1 == dbExpensesLength && fullYearLoop != true {
-      expensesYear = append(expensesYear, expensesMonth)
+      expensesYear =
+        append(
+          expensesYear,
+          self.addEmptyExpenses(expensesMonth, weekNumber, timestamp, gap, false),
+        )
 
       now := time.Now()
+      timestampGap := int(now.Unix()) - timestamp
 
       // Fill empty months
-      if now.Year() == year {
-        if now.Month() != month {
-          gap := int(now.Month()) - int(month)
+      if timestampGap > MinMonthTimestamp {
+        gap := timestampGap / MinMonthTimestamp
 
-          if gap > 0 {
-            for extraItr := 0; extraItr < gap; extraItr++ {
-              month := []map[string]interface{}{}
+        if gap > 0 && gap < MonthsInYear {
+          for extraItr := 0; extraItr < gap; extraItr++ {
+            month := []map[string]interface{}{}
 
-              for extraExpenseItr := 0; extraExpenseItr < WeeksInMonth; extraExpenseItr++ {
-                firstDayOfMonthTimestamp := int(date.Unix()) - (date.Day() - 1) * DayTimestamp
-                firstDayOfMonth :=
-                  time.Unix(
-                    int64(firstDayOfMonthTimestamp),
-                    0,
-                  )
+            for extraExpenseItr := 0; extraExpenseItr < WeeksInMonth; extraExpenseItr++ {
+              firstDayOfMonthTimestamp := timestamp - (day - 1) * DayTimestamp
+              firstDayOfMonth :=
+                time.Unix(
+                  int64(firstDayOfMonthTimestamp),
+                  0,
+                )
 
-                firstDayOfMonth.AddDate(0, 1, 0)
+              firstDayOfMonth.AddDate(0, 1, 0)
 
-                offset := int(firstDayOfMonth.Weekday()) - 1 // Sunday is last weekday in EU
+              offset := int(firstDayOfMonth.Weekday()) - 1 // Sunday is last weekday in EU
 
-                // Sunday is last weekday in EU
-                if offset < 0 {
-                  offset = 6
-                }
-
-                month =
-                  append(
-                    month,
-                    map[string]interface{}{
-                      "date": int(date.Unix()) + offset * DayTimestamp + extraExpenseItr * WeekTimestamp,
-                    },
-                  )
+              // Sunday is last weekday in EU
+              if offset < 0 {
+                offset = 6
               }
 
-              expensesYear = append(expensesYear, month)
+              month =
+                append(
+                  month,
+                  map[string]interface{}{
+                    "date": timestamp + offset * DayTimestamp + extraExpenseItr * WeekTimestamp,
+                  },
+                )
             }
+
+            expensesYear = append(expensesYear, month)
           }
         }
       }
 
       expenses = append(expenses, expensesYear)
 
-      // Fill empty years
-      if now.Year() != year {
-        // ???
-      }
+      // We haven't optional behavior for empty months > 12 (empty years). If we need this logic, it'll be here
     }
 
     prevMonth = month
@@ -278,37 +297,36 @@ func (self *Main) Get() map[string]interface{} {
   }
 }
 
-func (self *Main) GetWeekNumberFromDate(date time.Time) int {
-  offset := int(date.Weekday()) - date.Day() // Sunday is last weekday in EU
-  day := date.Day()
+func (self *Main) addEmptyExpenses(
+  month []map[string]interface{}, weekNumber int, timestamp int, gap int, redefineWeek bool,
+  ) []map[string]interface{} {
+    // What if we have month gap one-two and more months?
+    addition := WeeksInMonth - weekNumber
 
-  var firstDayOfMonthIsSunday bool
-  var weekNumber int
+    if addition > 0 {
+      for extraItr := 0; extraItr < addition; extraItr++ {
+        month =
+          append(
+            month,
+            map[string]interface{}{
+              "date": timestamp - gap * WeekTimestamp,
+            },
+          )
 
-  // Sunday is last weekday in EU
-  if offset < 0 {
-    offset = 6
-    firstDayOfMonthIsSunday = true
-  }
+        if redefineWeek == true && extraItr + 1 == addition {
+          weekNumber = weekNumber + extraItr + 1
+        }
+      }
+    }
 
-  if firstDayOfMonthIsSunday == true && day == 1 {
-    weekNumber = 1
-  } else {
-    weekNumber = (offset + day) / 7 + 1
-  }
-
-  if weekNumber > WeeksInMonth {
-    weekNumber = WeeksInMonth
-  }
-
-  return weekNumber
+    return month
 }
 
-func (self *Main) Set(res *http.Request) map[string]interface{} {
+func (self *Main) SetHandler(res *http.Request) map[string]interface{} {
   return self.ChangeRecord(res, "Set")
 }
 
-func (self *Main) Remove(res *http.Request) map[string]interface{} {
+func (self *Main) RemoveHandler(res *http.Request) map[string]interface{} {
   return self.ChangeRecord(res, "Remove")
 }
 

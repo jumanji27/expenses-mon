@@ -42,8 +42,8 @@ func (self *Main) Init(app *martini.ClassicMartini) {
     },
   )
 
-  model := model.Main{}
-  model.Init()
+  expensesModel := expensesModel.Main{}
+  expensesModel.Init()
 
   apiURL := apiBaseURL
   handler := "/get"
@@ -52,7 +52,7 @@ func (self *Main) Init(app *martini.ClassicMartini) {
   app.Post(
     apiURL,
     func(render render.Render) {
-      render.JSON(httpSuccess, model.Get())
+      render.JSON(httpSuccess, expensesModel.GetHandler())
     },
   )
 
@@ -63,7 +63,10 @@ func (self *Main) Init(app *martini.ClassicMartini) {
   app.Post(
     apiURL,
     func(res *http.Request, render render.Render) {
-      render.JSON(httpSuccess, model.Set(res))
+      render.JSON(
+        httpSuccess,
+        expensesModel.SetHandler(res),
+      )
     },
   )
 
@@ -74,7 +77,10 @@ func (self *Main) Init(app *martini.ClassicMartini) {
   app.Post(
     apiURL,
     func(res *http.Request, render render.Render) {
-      render.JSON(httpSuccess, model.Remove(res))
+      render.JSON(
+        httpSuccess,
+        expensesModel.RemoveHandler(res),
+      )
     },
   )
 }
