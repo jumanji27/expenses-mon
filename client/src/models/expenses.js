@@ -23,8 +23,6 @@ export default class Expenses extends Backbone.Model {
         self.set({
           expenses: self.format(self, res.success.expenses)
         });
-
-        console.log(self);
       }
     });
   }
