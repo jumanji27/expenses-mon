@@ -11,9 +11,10 @@ export default class Expense extends Backbone.View {
   render(target, expense) {
     target.append(
       tmpl_components_shared_expense_main({
-        id: expense.id || null,
+        id: expense.id,
         value: expense.value,
-        amount: expense.amount || null
+        amount: expense.amount,
+        date: expense.date
       })
     );
   }

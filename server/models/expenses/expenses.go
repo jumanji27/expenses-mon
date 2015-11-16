@@ -49,6 +49,7 @@ type DBExpense struct {
   Date time.Time
   Value int
   Comment string
+  averageUSDRUBRate float32
 }
 
 type DBExpenseRequred struct {
@@ -87,11 +88,11 @@ func (self *Main) GetHandler() map[string]interface{} {
   var fullYearLoop bool
 
   // Move to db
-  averageUSDRUBRate :=
-    map[int]float32{
-      2013: 31.9,
-      2014: 38.6,
-    }
+  // averageUSDRUBRate :=
+  //   map[int]float32{
+  //     2013: 31.9,
+  //     2014: 38.6,
+  //   }
 
   monthOffset := int(dbExpenses[0].Date.Weekday()) - 1  // Sunday is last weekday in EU
 
@@ -107,7 +108,6 @@ func (self *Main) GetHandler() map[string]interface{} {
     timestamp := int(date.Unix())
     year := date.Year()
     month := date.Month()
-    monthInt := int(month)
     day := date.Day()
 
     if month != prevMonth {
@@ -158,21 +158,21 @@ func (self *Main) GetHandler() map[string]interface{} {
     apiExpense := map[string]interface{}{}
     commentLength := len(expense.Comment)
 
-    if monthInt == 1 && len(expensesMonth) == 0 && averageUSDRUBRate[year] > 0 {
+    if expense.averageUSDRUBRate > 0 {
       if commentLength > 0 {
         apiExpense =
           map[string]interface{}{
             "id": expense.Id,
             "value": expense.Value,
             "comment": expense.Comment,
-            "year_average_usd_rub_rate": averageUSDRUBRate[year],
+            "year_average_usd_rub_rate": expense.averageUSDRUBRate,
           }
       } else {
         apiExpense =
           map[string]interface{}{
             "id": expense.Id,
             "value": expense.Value,
-            "year_average_usd_rub_rate": averageUSDRUBRate[year],
+            "year_average_usd_rub_rate": expense.averageUSDRUBRate,
           }
       }
     } else if commentLength > 0 {
