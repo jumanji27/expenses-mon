@@ -64,6 +64,7 @@ export default class Main extends Backbone.View {
       page: this,
       view: this.expenseView,
       forReq: {
+        action: "add",
         id: expense.attr('data-id')
       }
     },
@@ -84,10 +85,13 @@ export default class Main extends Backbone.View {
         );
 
     if (value) {
-      this.model.removeReq({
+      this.model.setReq({
         page: this,
         view: this.expenseView,
-        id: expense.attr('data-id')
+        forReq: {
+          action: "remove",
+          id: expense.attr('data-id')
+        }
       });
     }
   }

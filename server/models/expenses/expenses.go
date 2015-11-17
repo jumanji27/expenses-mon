@@ -22,7 +22,7 @@ type Main struct {
   MongoSession *mgo.Session
   DBExpense
   DBExpenseRequred
-  ChangeReq
+  SetReq
 }
 
 const (
@@ -114,7 +114,15 @@ func (self *Main) GetHandler() map[string]interface{} {
       expensesYear =
         append(
           expensesYear,
-          self.addEmptyExpenses(expensesMonth, weekNumber, timestamp, gap, true),
+          self.addEmptyExpenses(
+            expensesMonth,
+            true,
+            map[string]int{
+              "weekNumber": weekNumber,
+              "timestamp": timestamp,
+              "gap": gap,
+            },
+          ),
         )
 
       if year != prevYear {
@@ -221,7 +229,15 @@ func (self *Main) GetHandler() map[string]interface{} {
       expensesYear =
         append(
           expensesYear,
-          self.addEmptyExpenses(expensesMonth, weekNumber, timestamp, gap, false),
+          self.addEmptyExpenses(
+            expensesMonth,
+            false,
+            map[string]int{
+              "weekNumber": weekNumber,
+              "timestamp": timestamp,
+              "gap": gap,
+            },
+          ),
         )
 
       now := time.Now()
@@ -298,10 +314,10 @@ func (self *Main) GetHandler() map[string]interface{} {
 }
 
 func (self *Main) addEmptyExpenses(
-  month []map[string]interface{}, weekNumber int, timestamp int, gap int, redefineWeek bool,
+  month []map[string]interface{}, redefineWeek bool, params map[string]int,
   ) []map[string]interface{} {
     // What if we have month gap one-two and more months?
-    addition := WeeksInMonth - weekNumber
+    addition := WeeksInMonth - params["weekNumber"]
 
     if addition > 0 {
       for extraItr := 0; extraItr < addition; extraItr++ {
@@ -309,12 +325,12 @@ func (self *Main) addEmptyExpenses(
           append(
             month,
             map[string]interface{}{
-              "date": timestamp - gap * WeekTimestamp,
+              "date": params["timestamp"] - params["gap"] * WeekTimestamp,
             },
           )
 
         if redefineWeek == true && extraItr + 1 == addition {
-          weekNumber = weekNumber + extraItr + 1
+          params["weekNumber"] = params["weekNumber"] + extraItr + 1
         }
       }
     }
@@ -322,30 +338,15 @@ func (self *Main) addEmptyExpenses(
     return month
 }
 
-func (self *Main) SetHandler(res *http.Request) map[string]interface{} {
-  return self.ChangeRecord(res, "Set")
-}
-
-func (self *Main) RemoveHandler(res *http.Request) map[string]interface{} {
-  return self.ChangeRecord(res, "Remove")
-}
-
-func (self *Main) ProcessReqBody(res *http.Request) string {
-  bodyUInt8, err := ioutil.ReadAll(res.Body)
-  if err != nil {
-    self.Helpers.CreateEvent("Warning", err.Error())
-  }
-
-  return strings.Replace(string(bodyUInt8), "'", "\"", -1)
-}
-
-type ChangeReq struct {
+type SetReq struct {
+  Action string `json: "action"`
   Id string `json: "id"`
   Comment string `json: "comment"`
+  Date int `json: "date"`
 }
 
-func (self *Main) ChangeRecord(res *http.Request, action string) map[string]interface{} {
-  reqExpense := ChangeReq{}
+func (self *Main) SetHandler(res *http.Request) map[string]interface{} {
+  reqExpense := SetReq{}
 
   json.Unmarshal(
     []byte(
@@ -354,26 +355,30 @@ func (self *Main) ChangeRecord(res *http.Request, action string) map[string]inte
     &reqExpense,
   )
 
-  if len(reqExpense.Id) > 0 {
-    dbExpense := DBExpense{}
-    self.MongoCollection.Find(
-      bson.M{
-        "_id": bson.ObjectIdHex(reqExpense.Id),
-      },
-    ).One(&dbExpense)
+  reqExpenseIdLength := len(reqExpense.Id)
 
-    // Add and Remove not only Update
+  if len(reqExpense.Action) > 0 && (reqExpenseIdLength > 0 || reqExpense.Date > 0) {
+    var value int
+    var expense bson.M
+    var id bson.ObjectId
+    var date time.Time
 
-    if len(dbExpense.Id) > 0 {
-      var value int
+    if reqExpenseIdLength > 0 {
+      dbExpense := DBExpense{}
 
-      if action == "Set" {
+      self.MongoCollection.Find(
+        bson.M{
+          "_id": bson.ObjectIdHex(reqExpense.Id),
+        },
+      ).One(&dbExpense)
+
+      if reqExpense.Action == "add" {
         value = dbExpense.Value + 1
-      } else if action == "Remove" {
+      } else if reqExpense.Action == "remove" {
         value = dbExpense.Value - 1
       }
 
-      var expense bson.M
+      id = bson.ObjectIdHex(reqExpense.Id)
 
       if len(reqExpense.Comment) > 0 {
         expense =
@@ -387,22 +392,54 @@ func (self *Main) ChangeRecord(res *http.Request, action string) map[string]inte
             "value": value,
           }
       }
+    } else {
+      value = 1
+      id = bson.ObjectIdHex("")
+      date =
+        time.Unix(
+          int64(reqExpense.Date),
+          0,
+        )
 
+      if len(reqExpense.Comment) > 0 {
+        expense =
+          bson.M{
+            "date": date,
+            "value": value,
+            "commit": reqExpense.Comment,
+          }
+      } else {
+        expense =
+          bson.M{
+            "date": date,
+            "value": value,
+          }
+      }
+    }
+
+    if value > 0 {
       self.MongoCollection.Update(
         bson.M{
-          "_id": bson.ObjectIdHex(reqExpense.Id),
+          "_id": id,
         },
         bson.M{
           "$set": expense,
         },
       )
 
-      self.Helpers.CreateEvent("Log", "Updated expense")
-    } else {
-      return map[string]interface{}{
-        "success": nil,
-        "error": "Did't found this expense",
+      if len(id) > 0 {
+        self.Helpers.CreateEvent("Log", "Updated expense")
+      } else {
+        self.Helpers.CreateEvent("Log", "Added expense")
       }
+    } else {
+      self.MongoCollection.Remove(
+        bson.M{
+          "_id": id,
+        },
+      )
+
+      self.Helpers.CreateEvent("Log", "Deleted expense")
     }
 
     return map[string]interface{}{
@@ -417,4 +454,18 @@ func (self *Main) ChangeRecord(res *http.Request, action string) map[string]inte
       "error": "Data validation error",
     }
   }
+}
+
+func (self *Main) ProcessReqBody(res *http.Request) string {
+  bodyUInt8, err := ioutil.ReadAll(res.Body)
+  if err != nil {
+    self.Helpers.CreateEvent("Warning", err.Error())
+  }
+
+  return strings.Replace(
+    string(bodyUInt8),
+    "'",
+    "\"",
+    -1,
+  )
 }

@@ -69,18 +69,4 @@ func (self *Main) Init(app *martini.ClassicMartini) {
       )
     },
   )
-
-  apiURL = apiBaseURL
-  handler = "/remove"
-  apiURL += handler
-
-  app.Post(
-    apiURL,
-    func(res *http.Request, render render.Render) {
-      render.JSON(
-        httpSuccess,
-        expensesModel.RemoveHandler(res),
-      )
-    },
-  )
 }
