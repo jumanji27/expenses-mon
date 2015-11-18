@@ -358,7 +358,6 @@ func (self *Main) SetHandler(res *http.Request) map[string]interface{} {
 
   if len(reqExpense.Action) > 0 && (reqExpenseIdLength > 0 || reqExpense.Date > 0) {
     var value int
-    var expense bson.M
     var id bson.ObjectId
     var date time.Time
 
@@ -376,6 +375,8 @@ func (self *Main) SetHandler(res *http.Request) map[string]interface{} {
       } else if reqExpense.Action == "remove" {
         value = dbExpense.Value - 1
       }
+
+      var expense bson.M
 
       id = bson.ObjectIdHex(reqExpense.Id)
 
@@ -413,6 +414,8 @@ func (self *Main) SetHandler(res *http.Request) map[string]interface{} {
         self.Helpers.CreateEvent("Log", "Deleted expense")
       }
     } else {
+      var expense SetReq{}
+
       value = 1
       date =
         time.Unix(
