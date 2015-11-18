@@ -8,7 +8,7 @@ export default class Main extends Backbone.View {
     super({
       el: '.js_wrapper',
       events: {
-        'click .js_popup__add': 'popupSet',
+        'click .js_popup__add': 'popupAdd',
         'click .js_popup__remove': 'popupRemove'
       }
     });
@@ -57,15 +57,19 @@ export default class Main extends Backbone.View {
     $(this.el).find('.js_popup-start').simplePopup();
   }
 
-  popupSet() {
+  popupAdd() {
     let expense = $(this.el).find('.js_popup-start_active');
 
     let params = {
       page: this,
       view: this.expenseView,
       forReq: {
-        action: "add",
-        id: expense.attr('data-id')
+        action: 'add',
+        id: expense.attr('data-id'),
+        date:
+          parseInt(
+            expense.attr('data-date')
+          )
       }
     },
       comment = $(this.el).find('.js_popup__comment').val();
@@ -89,7 +93,7 @@ export default class Main extends Backbone.View {
         page: this,
         view: this.expenseView,
         forReq: {
-          action: "remove",
+          action: 'remove',
           id: expense.attr('data-id')
         }
       });

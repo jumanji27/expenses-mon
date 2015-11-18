@@ -36,7 +36,6 @@ func (self *Main) Init(app *martini.ClassicMartini) {
         httpSuccess,
         map[string]interface{}{
           "success": map[string]interface{}{"greeting": "Hello, I'm your API!"},
-          "error": nil,
         },
       )
     },

@@ -309,7 +309,6 @@ func (self *Main) GetHandler() map[string]interface{} {
         "unit_measure": UnitMeasure,
         "currency": Currency,
       },
-    "error": nil,
   }
 }
 
@@ -392,9 +391,29 @@ func (self *Main) SetHandler(res *http.Request) map[string]interface{} {
             "value": value,
           }
       }
+
+      if value > 0 {
+        self.MongoCollection.Update(
+          bson.M{
+            "_id": id,
+          },
+          bson.M{
+            "$set": expense,
+          },
+        )
+
+        self.Helpers.CreateEvent("Log", "Updated expense")
+      } else {
+        self.MongoCollection.Remove(
+          bson.M{
+            "_id": id,
+          },
+        )
+
+        self.Helpers.CreateEvent("Log", "Deleted expense")
+      }
     } else {
       value = 1
-      id = bson.ObjectIdHex("")
       date =
         time.Unix(
           int64(reqExpense.Date),
@@ -415,42 +434,18 @@ func (self *Main) SetHandler(res *http.Request) map[string]interface{} {
             "value": value,
           }
       }
-    }
 
-    if value > 0 {
-      self.MongoCollection.Update(
-        bson.M{
-          "_id": id,
-        },
-        bson.M{
-          "$set": expense,
-        },
-      )
-
-      if len(id) > 0 {
-        self.Helpers.CreateEvent("Log", "Updated expense")
-      } else {
-        self.Helpers.CreateEvent("Log", "Added expense")
-      }
-    } else {
-      self.MongoCollection.Remove(
-        bson.M{
-          "_id": id,
-        },
-      )
-
-      self.Helpers.CreateEvent("Log", "Deleted expense")
+      self.MongoCollection.Insert(expense)
+      self.Helpers.CreateEvent("Log", "Added expense")
     }
 
     return map[string]interface{}{
       "success": true,
-      "error": nil,
     }
   } else {
     self.Helpers.CreateEvent("Log", "Failed request, validation error")
 
     return map[string]interface{}{
-      "success": nil,
       "error": "Data validation error",
     }
   }

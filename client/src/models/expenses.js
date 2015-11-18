@@ -63,7 +63,7 @@ export default class Expenses extends Backbone.Model {
   }
 
   format(self, dbExpenses) {
-    let MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+    let MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
       expenses = [];
 
     dbExpenses.map((rawYear, key) => {
