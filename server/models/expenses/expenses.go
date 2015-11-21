@@ -1,7 +1,7 @@
 package expensesModel
 
 import (
-  // "fmt"
+  "fmt"
   // "reflect"
   "time"
   "net/http"
@@ -513,6 +513,8 @@ func (self *Main) SetHandler(res *http.Request) map[string]interface{} {
             expense["value"] = value
 
             expenseId := expense["id"].(bson.ObjectId)
+
+            // WTF DATE?
 
             if expense["date"] != nil && bson.ObjectId.Hex(expenseId) == reqExpense.Id {
               date := expense["date"].(time.Time)
