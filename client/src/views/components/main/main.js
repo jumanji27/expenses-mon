@@ -65,11 +65,7 @@ export default class Main extends Backbone.View {
       view: this.expenseView,
       forReq: {
         action: 'add',
-        id: expense.attr('data-id'),
-        date:
-          parseInt(
-            expense.attr('data-date')
-          )
+        id: expense.attr('data-id')
       }
     },
       comment = $(this.el).find('.js_popup__comment').val();

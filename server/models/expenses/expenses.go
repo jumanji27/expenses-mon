@@ -20,9 +20,11 @@ type Main struct {
   Helpers helpers.Main
   MongoCollection *mgo.Collection
   MongoSession *mgo.Session
-  DBExpense
-  DBExpenseRequred
+  Expenses [][][]map[string]interface{}
+  GetDBExpense
   SetReq
+  SetDBExpenseRequired
+  SetDBExpense
 }
 
 const (
@@ -44,18 +46,12 @@ func (self *Main) Init() {
   self.Helpers.CreateEvent("Log", "Mongo ready")
 }
 
-type DBExpense struct {
+type GetDBExpense struct {
   Id bson.ObjectId `bson:"_id"`
   Date time.Time
   Value int
   Comment string
   averageUSDRUBRate float32
-}
-
-type DBExpenseRequred struct {
-  Id bson.ObjectId `bson:"_id"`
-  Date time.Time
-  Value int
 }
 
 const (
@@ -68,254 +64,264 @@ const (
 )
 
 func (self *Main) GetHandler() map[string]interface{} {
-  dbExpenses := []DBExpense{}
+  dbExpenses := []GetDBExpense{}
   self.MongoCollection.Find(nil).All(&dbExpenses)
 
   dbExpensesLength := len(dbExpenses)
 
-  expensesMonth := []map[string]interface{}{}
-  expensesYear := [][]map[string]interface{}{}
-  expenses := [][][]map[string]interface{}{}
+  if dbExpensesLength > 0 {
+    expensesMonth := []map[string]interface{}{}
+    expensesYear := [][]map[string]interface{}{}
 
-  // In first iteration == current
-  prevMonth := dbExpenses[0].Date.Month()
-  prevYear := dbExpenses[0].Date.Year()
+    // In first iteration == current
+    prevMonth := dbExpenses[0].Date.Month()
+    prevYear := dbExpenses[0].Date.Year()
 
-  var weekNumber int
-  var prevWeekNumber int
-  var firstDayOfMonthIsSunday bool
-  var gap int
-  var fullYearLoop bool
+    var weekNumber int
+    var prevWeekNumber int
+    var firstDayOfMonthIsSunday bool
+    var gap int
+    var fullYearLoop bool
 
-  // Move to db
-  // averageUSDRUBRate :=
-  //   map[int]float32{
-  //     2013: 31.9,
-  //     2014: 38.6,
-  //   }
+    // Move to db
+    // averageUSDRUBRate :=
+    //   map[int]float32{
+    //     2013: 31.9,
+    //     2014: 38.6,
+    //   }
 
-  monthOffset := int(dbExpenses[0].Date.Weekday()) - 1  // Sunday is last weekday in EU
+    monthOffset := int(dbExpenses[0].Date.Weekday()) - 1  // Sunday is last weekday in EU
 
-  // Sunday is last weekday in EU
-  if monthOffset < 0 {
-    monthOffset = 6
-    firstDayOfMonthIsSunday = true
-  }
+    // Sunday is last weekday in EU
+    if monthOffset < 0 {
+      monthOffset = 6
+      firstDayOfMonthIsSunday = true
+    }
 
-  for dbExpenseItr := 0; dbExpenseItr < dbExpensesLength; dbExpenseItr++ {
-    expense := dbExpenses[dbExpenseItr]
-    date := expense.Date
-    timestamp := int(date.Unix())
-    year := date.Year()
-    month := date.Month()
-    day := date.Day()
+    self.Expenses = [][][]map[string]interface{}{}
 
-    if month != prevMonth {
-      expensesYear =
-        append(
-          expensesYear,
-          self.addEmptyExpenses(
-            expensesMonth,
-            true,
-            map[string]int{
-              "weekNumber": weekNumber,
-              "timestamp": timestamp,
-              "gap": gap,
-            },
-          ),
-        )
+    for dbExpenseItr := 0; dbExpenseItr < dbExpensesLength; dbExpenseItr++ {
+      expense := dbExpenses[dbExpenseItr]
+      date := expense.Date
+      timestamp := int(date.Unix())
+      year := date.Year()
+      month := date.Month()
+      day := date.Day()
 
-      if year != prevYear {
-        expenses = append(expenses, expensesYear)
+      if month != prevMonth {
+        expensesYear =
+          append(
+            expensesYear,
+            self.addEmptyExpenses(
+              expensesMonth,
+              true,
+              map[string]int{
+                "weekNumber": weekNumber,
+                "timestamp": timestamp,
+                "gap": gap,
+              },
+            ),
+          )
 
-        expensesYear = [][]map[string]interface{}{}
-        fullYearLoop = true
+        if year != prevYear {
+          self.Expenses = append(self.Expenses, expensesYear)
+
+          expensesYear = [][]map[string]interface{}{}
+          fullYearLoop = true
+        } else {
+          fullYearLoop = false
+        }
+
+        firstMonthDay :=
+          time.Unix(
+            int64(timestamp - (day - 1) * DayTimestamp),
+            0,
+          )
+
+        monthOffset = int(firstMonthDay.Weekday()) - 1
+
+        // Sunday is last weekday in EU
+        if monthOffset < 0 {
+          monthOffset = 6
+          firstDayOfMonthIsSunday = true
+        }
+
+        expensesMonth = []map[string]interface{}{}
+      }
+
+      if firstDayOfMonthIsSunday == true && day == 1 {
+        weekNumber = 1
       } else {
-        fullYearLoop = false
+        weekNumber = (monthOffset + day) / 7 + 1
       }
 
-      firstMonthDay :=
-        time.Unix(
-          int64(timestamp - (day - 1) * DayTimestamp),
-          0,
-        )
-
-      monthOffset = int(firstMonthDay.Weekday()) - 1
-
-      // Sunday is last weekday in EU
-      if monthOffset < 0 {
-        monthOffset = 6
-        firstDayOfMonthIsSunday = true
+      if weekNumber > WeeksInMonth {
+        weekNumber = WeeksInMonth
       }
 
-      expensesMonth = []map[string]interface{}{}
-    }
+      firstDayOfMonthIsSunday = false
 
-    if firstDayOfMonthIsSunday == true && day == 1 {
-      weekNumber = 1
-    } else {
-      weekNumber = (monthOffset + day) / 7 + 1
-    }
+      apiExpense := map[string]interface{}{}
+      commentLength := len(expense.Comment)
 
-    if weekNumber > WeeksInMonth {
-      weekNumber = WeeksInMonth
-    }
-
-    firstDayOfMonthIsSunday = false
-
-    apiExpense := map[string]interface{}{}
-    commentLength := len(expense.Comment)
-
-    if expense.averageUSDRUBRate > 0 {
-      if commentLength > 0 {
+      if expense.averageUSDRUBRate > 0 {
+        if commentLength > 0 {
+          apiExpense =
+            map[string]interface{}{
+              "id": expense.Id,
+              "value": expense.Value,
+              "comment": expense.Comment,
+              "year_average_usd_rub_rate": expense.averageUSDRUBRate,
+            }
+        } else {
+          apiExpense =
+            map[string]interface{}{
+              "id": expense.Id,
+              "value": expense.Value,
+              "year_average_usd_rub_rate": expense.averageUSDRUBRate,
+            }
+        }
+      } else if commentLength > 0 {
         apiExpense =
           map[string]interface{}{
             "id": expense.Id,
             "value": expense.Value,
             "comment": expense.Comment,
-            "year_average_usd_rub_rate": expense.averageUSDRUBRate,
           }
       } else {
         apiExpense =
           map[string]interface{}{
             "id": expense.Id,
             "value": expense.Value,
-            "year_average_usd_rub_rate": expense.averageUSDRUBRate,
           }
       }
-    } else if commentLength > 0 {
-      apiExpense =
-        map[string]interface{}{
-          "id": expense.Id,
-          "value": expense.Value,
-          "comment": expense.Comment,
+
+      gap = weekNumber - prevWeekNumber
+
+      if gap > 1 {
+        for extraItr := 1; extraItr < gap; extraItr++ {
+          expensesMonth =
+            append(
+              expensesMonth,
+              map[string]interface{}{
+                "id": bson.NewObjectId(),
+              },
+            )
         }
-    } else {
-      apiExpense =
-        map[string]interface{}{
-          "id": expense.Id,
-          "value": expense.Value,
+      } else if gap < 0 {
+        for extraItr := 1; extraItr < weekNumber; extraItr++ {
+          expensesMonth =
+            append(
+              expensesMonth,
+              map[string]interface{}{
+                "id": bson.NewObjectId(),
+              },
+            )
         }
-    }
-
-    gap = weekNumber - prevWeekNumber
-
-    if gap > 1 {
-      for extraItr := 1; extraItr < gap; extraItr++ {
-        expensesMonth =
-          append(
-            expensesMonth,
-            map[string]interface{}{
-              "date": timestamp - gap * WeekTimestamp,
-            },
-          )
       }
-    } else if gap < 0 {
-      for extraItr := 1; extraItr < weekNumber; extraItr++ {
-        expensesMonth =
+
+      expensesMonth = append(expensesMonth, apiExpense)
+
+      // Non full year
+      if dbExpenseItr + 1 == dbExpensesLength && fullYearLoop != true {
+        expensesYear =
           append(
-            expensesMonth,
-            map[string]interface{}{
-              "date": timestamp - extraItr * WeekTimestamp,
-            },
+            expensesYear,
+            self.addEmptyExpenses(
+              expensesMonth,
+              false,
+              map[string]int{
+                "weekNumber": weekNumber,
+                "timestamp": timestamp,
+                "gap": gap,
+              },
+            ),
           )
-      }
-    }
 
-    expensesMonth = append(expensesMonth, apiExpense)
+        now := time.Now()
+        timestampGap := int(now.Unix()) - timestamp
 
-    // Non full year
-    if dbExpenseItr + 1 == dbExpensesLength && fullYearLoop != true {
-      expensesYear =
-        append(
-          expensesYear,
-          self.addEmptyExpenses(
-            expensesMonth,
-            false,
-            map[string]int{
-              "weekNumber": weekNumber,
-              "timestamp": timestamp,
-              "gap": gap,
-            },
-          ),
-        )
+        // Fill empty months
+        if timestampGap > MinMonthTimestamp {
+          gap := timestampGap / MinMonthTimestamp
 
-      now := time.Now()
-      timestampGap := int(now.Unix()) - timestamp
+          if gap > 0 && gap < MonthsInYear {
+            for extraItr := 0; extraItr < gap; extraItr++ {
+              month := []map[string]interface{}{}
 
-      // Fill empty months
-      if timestampGap > MinMonthTimestamp {
-        gap := timestampGap / MinMonthTimestamp
+              for extraExpenseItr := 0; extraExpenseItr < WeeksInMonth; extraExpenseItr++ {
+                firstDayOfMonthTimestamp := timestamp - (day - 1) * DayTimestamp
+                firstDayOfMonth :=
+                  time.Unix(
+                    int64(firstDayOfMonthTimestamp),
+                    0,
+                  )
 
-        if gap > 0 && gap < MonthsInYear {
-          for extraItr := 0; extraItr < gap; extraItr++ {
-            month := []map[string]interface{}{}
+                firstDayOfMonth.AddDate(0, 1, 0)
 
-            for extraExpenseItr := 0; extraExpenseItr < WeeksInMonth; extraExpenseItr++ {
-              firstDayOfMonthTimestamp := timestamp - (day - 1) * DayTimestamp
-              firstDayOfMonth :=
-                time.Unix(
-                  int64(firstDayOfMonthTimestamp),
-                  0,
-                )
+                offset := int(firstDayOfMonth.Weekday()) - 1 // Sunday is last weekday in EU
 
-              firstDayOfMonth.AddDate(0, 1, 0)
+                // Sunday is last weekday in EU
+                if offset < 0 {
+                  offset = 6
+                }
 
-              offset := int(firstDayOfMonth.Weekday()) - 1 // Sunday is last weekday in EU
-
-              // Sunday is last weekday in EU
-              if offset < 0 {
-                offset = 6
+                month =
+                  append(
+                    month,
+                    map[string]interface{}{
+                      "id": bson.NewObjectId(),
+                    },
+                  )
               }
 
-              month =
-                append(
-                  month,
-                  map[string]interface{}{
-                    "date": timestamp + offset * DayTimestamp + extraExpenseItr * WeekTimestamp,
-                  },
-                )
+              expensesYear = append(expensesYear, month)
             }
-
-            expensesYear = append(expensesYear, month)
           }
         }
+
+        self.Expenses = append(self.Expenses, expensesYear)
+
+        // We haven't optional behavior for empty months > 12 (empty years). If we need this logic, it'll be here
       }
 
-      expenses = append(expenses, expensesYear)
-
-      // We haven't optional behavior for empty months > 12 (empty years). If we need this logic, it'll be here
+      prevMonth = month
+      prevYear = year
+      prevWeekNumber = weekNumber
     }
 
-    prevMonth = month
-    prevYear = year
-    prevWeekNumber = weekNumber
-  }
+    apiExpenses := [][][]map[string]interface{}{}
 
-  apiExpenses := [][][]map[string]interface{}{}
+    for key := range self.Expenses {
+      apiExpenses =
+        append(
+          apiExpenses,
+          self.Expenses[len(self.Expenses) - key - 1],
+        )
+    }
 
-  for key := range expenses {
-    apiExpenses =
-      append(
-        apiExpenses,
-        expenses[len(expenses) - key - 1],
-      )
-  }
+    return map[string]interface{}{
+      "success":
+        map[string]interface{}{
+          "expenses": apiExpenses,
+          "unit_measure": UnitMeasure,
+          "currency": Currency,
+        },
+    }
+  } else {
+    status := "DB is empty"
 
-  return map[string]interface{}{
-    "success":
-      map[string]interface{}{
-        "expenses": apiExpenses,
-        "unit_measure": UnitMeasure,
-        "currency": Currency,
-      },
+    self.Helpers.CreateEvent("Warning", status)
+
+    return map[string]interface{}{
+      "error": status,
+    }
   }
 }
 
 func (self *Main) addEmptyExpenses(
   month []map[string]interface{}, redefineWeek bool, params map[string]int,
   ) []map[string]interface{} {
-    // What if we have month gap one-two and more months?
     addition := WeeksInMonth - params["weekNumber"]
 
     if addition > 0 {
@@ -324,7 +330,7 @@ func (self *Main) addEmptyExpenses(
           append(
             month,
             map[string]interface{}{
-              "date": params["timestamp"] - params["gap"] * WeekTimestamp,
+              "id": bson.NewObjectId(),
             },
           )
 
@@ -341,7 +347,19 @@ type SetReq struct {
   Action string `json: "action"`
   Id string `json: "id"`
   Comment string `json: "comment"`
-  Date int `json: "date"`
+}
+
+type SetDBExpenseRequired struct {
+  Id bson.ObjectId
+  Date time.Time
+  Value int
+}
+
+type SetDBExpense struct {
+  Id bson.ObjectId
+  Date time.Time
+  Value int
+  Comment string
 }
 
 func (self *Main) SetHandler(res *http.Request) map[string]interface{} {
@@ -354,22 +372,18 @@ func (self *Main) SetHandler(res *http.Request) map[string]interface{} {
     &reqExpense,
   )
 
-  reqExpenseIdLength := len(reqExpense.Id)
-
-  if len(reqExpense.Action) > 0 && (reqExpenseIdLength > 0 || reqExpense.Date > 0) {
+  if len(reqExpense.Action) > 0 && len(reqExpense.Id) > 0 {
     var value int
-    var id bson.ObjectId
-    var date time.Time
 
-    if reqExpenseIdLength > 0 {
-      dbExpense := DBExpense{}
+    dbExpense := GetDBExpense{}
 
-      self.MongoCollection.Find(
-        bson.M{
-          "_id": bson.ObjectIdHex(reqExpense.Id),
-        },
-      ).One(&dbExpense)
+    self.MongoCollection.Find(
+      bson.M{
+        "_id": bson.ObjectIdHex(reqExpense.Id),
+      },
+    ).One(&dbExpense)
 
+    if len(dbExpense.Id) > 0 {
       if reqExpense.Action == "add" {
         value = dbExpense.Value + 1
       } else if reqExpense.Action == "remove" {
@@ -377,8 +391,6 @@ func (self *Main) SetHandler(res *http.Request) map[string]interface{} {
       }
 
       var expense bson.M
-
-      id = bson.ObjectIdHex(reqExpense.Id)
 
       if len(reqExpense.Comment) > 0 {
         expense =
@@ -396,7 +408,7 @@ func (self *Main) SetHandler(res *http.Request) map[string]interface{} {
       if value > 0 {
         self.MongoCollection.Update(
           bson.M{
-            "_id": id,
+            "_id": dbExpense.Id,
           },
           bson.M{
             "$set": expense,
@@ -407,38 +419,45 @@ func (self *Main) SetHandler(res *http.Request) map[string]interface{} {
       } else {
         self.MongoCollection.Remove(
           bson.M{
-            "_id": id,
+            "_id": dbExpense.Id,
           },
         )
 
         self.Helpers.CreateEvent("Log", "Deleted expense")
       }
     } else {
-      var expense SetReq{}
-
       value = 1
-      date =
-        time.Unix(
-          int64(reqExpense.Date),
-          0,
-        )
 
-      if len(reqExpense.Comment) > 0 {
-        expense =
-          bson.M{
-            "date": date,
-            "value": value,
-            "commit": reqExpense.Comment,
+      for _, year := range self.Expenses {
+        for _, month := range year {
+          for _, expense := range month {
+            expenseId := expense["id"].(bson.ObjectId)
+            date := expense["date"].(time.Time)
+
+            if bson.ObjectId.Hex(expenseId) == reqExpense.Id {
+              if expense["comment"] == nil {
+                self.MongoCollection.Insert(
+                  SetDBExpenseRequired{
+                    Id: expenseId,
+                    Date: date,
+                    Value: value,
+                  },
+                )
+              } else {
+                self.MongoCollection.Insert(
+                  SetDBExpense{
+                    Id: expenseId,
+                    Date: date,
+                    Value: value,
+                    Comment: expense["comment"].(string),
+                  },
+                )
+              }
+            }
           }
-      } else {
-        expense =
-          bson.M{
-            "date": date,
-            "value": value,
-          }
+        }
       }
 
-      self.MongoCollection.Insert(expense)
       self.Helpers.CreateEvent("Log", "Added expense")
     }
 

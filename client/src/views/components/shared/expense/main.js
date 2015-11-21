@@ -13,23 +13,25 @@ export default class Expense extends Backbone.View {
       tmpl_components_shared_expense_main({
         id: expense.id,
         value: expense.value,
-        amount: expense.amount,
-        date: expense.date
+        amount: expense.amount
       })
     );
   }
 
   updateHTML(params) {
     let expense = $(this.el).find('.js_popup-start_active'),
-      value =
-        parseInt(
-          expense.attr('data-value')
-        );
+      value = expense.attr('data-value');
 
-    if (params && params.decrement) {
-      value--;
+    if (value) {
+      value = parseInt(value);
+
+      if (params && params.decrement) {
+        value--;
+      } else {
+        value++;
+      }
     } else {
-      value++;
+      value = 1;
     }
 
     let rawAmount = value * this.model.get('unitMeasure'),

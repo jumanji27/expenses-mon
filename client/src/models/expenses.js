@@ -11,39 +11,35 @@ export default class Expenses extends Backbone.Model {
 
 
   getReq() {
-    let self = this;
+    let that = this;
 
     $.ajax({
       type: this.API_HTTP_METHOD,
       url: this.API_URL + 'get',
       success: (res) => {
-        self.set({
+        that.set({
           unitMeasure: res.success.unit_measure
         });
-        self.set({
-          expenses: self.format(self, res.success.expenses)
+        that.set({
+          expenses: that.format(that, res.success.expenses)
         });
       }
     });
   }
 
   setReq(params) {
-    let self = this;
+    let that = this;
 
     $.ajax({
       type: this.API_HTTP_METHOD,
       url: this.API_URL + 'set',
       data: JSON.stringify(params.forReq),
       success: (res) => {
-        self.sendStatusToView(params.page, res);
+        that.sendStatusToView(params.page, res);
 
-        let paramsToView = {};
-
-        if (params.forReq.action === 'remove') {
-          paramsToView.decrement = true;
-        }
-
-        params.view.updateHTML(paramsToView);
+        params.view.updateHTML({
+          decrement: params.forReq.action === 'remove' ? true : false
+        });
       }
     });
   }
@@ -62,7 +58,7 @@ export default class Expenses extends Backbone.Model {
     view.popupUpdateStatus(params);
   }
 
-  format(self, dbExpenses) {
+  format(that, dbExpenses) {
     let MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
       expenses = [];
 
@@ -75,12 +71,11 @@ export default class Expenses extends Backbone.Model {
         rawMonth.map((apiExpense, expenseKey) => {
           let expense = {
             id: apiExpense.id,
-            value: apiExpense.value,
-            date: apiExpense.date
+            value: apiExpense.value
           }
 
           if (apiExpense.value) {
-            let rawAmount = apiExpense.value * self.get('unitMeasure'),
+            let rawAmount = apiExpense.value * that.get('unitMeasure'),
               amount = rawAmount.toString().replace(/000$/g, 'k');
 
             expense.amount = amount;
