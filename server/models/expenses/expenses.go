@@ -103,8 +103,7 @@ func (self *Main) GetHandler() map[string]interface{} {
       firstDayOfMonthIsSunday = true
     }
 
-    for dbExpenseItr := 0; dbExpenseItr < dbExpensesLength; dbExpenseItr++ {
-      dbExpense := dbExpenses[dbExpenseItr]
+    for key, dbExpense := range dbExpenses {
       date := dbExpense.Date
       timestamp := int(date.Unix())
       year := date.Year()
@@ -267,7 +266,7 @@ func (self *Main) GetHandler() map[string]interface{} {
       apiExpensesMonth = append(apiExpensesMonth, apiExpense)
 
       // Non full year
-      if dbExpenseItr + 1 == dbExpensesLength && fullYearLoop != true {
+      if key + 1 == dbExpensesLength && fullYearLoop != true {
         formatedMonths :=
           self.addEmptyExpenses(
             expensesMonth,
