@@ -1,7 +1,7 @@
 package expensesModel
 
 import (
-  // "fmt"
+  "fmt"
   // "reflect"
   "time"
   "net/http"
@@ -21,6 +21,7 @@ type Main struct {
   MongoCollection *mgo.Collection
   MongoSession *mgo.Session
   Expenses [][][]map[string]interface{}
+  apiExpenses [][][]map[string]interface{}
   GetDBExpense
   SetReq
   SetDBExpenseRequired
@@ -64,17 +65,48 @@ const (
 )
 
 func (self *Main) GetHandler() map[string]interface{} {
+  self.formExpenses()
+
+  if len(self.apiExpenses) > 0 {
+    apiExpensesInverse := [][][]map[string]interface{}{}
+
+    for key := range self.apiExpenses {
+      apiExpensesInverse =
+        append(
+          apiExpensesInverse,
+          self.apiExpenses[len(self.apiExpenses) - key - 1],
+        )
+    }
+
+    return map[string]interface{}{
+      "success":
+        map[string]interface{}{
+          "expenses": apiExpensesInverse,
+          "unit_measure": UnitMeasure,
+          "currency": Currency,
+        },
+    }
+  } else {
+    status := "DB is empty"
+
+    self.Helpers.CreateEvent("Warning", status)
+
+    return map[string]interface{}{
+      "error": status,
+    }
+  }
+}
+
+func (self *Main) formExpenses() {
   dbExpenses := []GetDBExpense{}
   self.MongoCollection.Find(nil).All(&dbExpenses)
 
   dbExpensesLength := len(dbExpenses)
 
   if dbExpensesLength > 0 {
-    self.Expenses = [][][]map[string]interface{}{}
     expensesYear := [][]map[string]interface{}{}
     expensesMonth := []map[string]interface{}{}
 
-    apiExpenses := [][][]map[string]interface{}{}
     apiExpensesYear := [][]map[string]interface{}{}
     apiExpensesMonth := []map[string]interface{}{}
 
@@ -103,6 +135,14 @@ func (self *Main) GetHandler() map[string]interface{} {
       firstDayOfMonthIsSunday = true
     }
 
+    if len(self.Expenses) > 0 {
+      self.Expenses = [][][]map[string]interface{}{}
+    }
+
+    if len(self.apiExpenses) > 0 {
+      self.apiExpenses = [][][]map[string]interface{}{}
+    }
+
     for key, dbExpense := range dbExpenses {
       date := dbExpense.Date
       timestamp := int(date.Unix())
@@ -128,7 +168,7 @@ func (self *Main) GetHandler() map[string]interface{} {
 
         if year != prevYear {
           self.Expenses = append(self.Expenses, expensesYear)
-          apiExpenses = append(apiExpenses, apiExpensesYear)
+          self.apiExpenses = append(self.apiExpenses, apiExpensesYear)
 
           expensesYear = [][]map[string]interface{}{}
           apiExpensesYear = [][]map[string]interface{}{}
@@ -340,7 +380,7 @@ func (self *Main) GetHandler() map[string]interface{} {
         }
 
         self.Expenses = append(self.Expenses, expensesYear)
-        apiExpenses = append(apiExpenses, apiExpensesYear)
+        self.apiExpenses = append(self.apiExpenses, apiExpensesYear)
 
         // We haven't optional behavior for empty months > 12 (empty years). If we need this logic, it'll be here
       }
@@ -348,33 +388,6 @@ func (self *Main) GetHandler() map[string]interface{} {
       prevMonth = month
       prevYear = year
       prevWeekNumber = weekNumber
-    }
-
-    apiExpensesInverse := [][][]map[string]interface{}{}
-
-    for key := range apiExpenses {
-      apiExpensesInverse =
-        append(
-          apiExpensesInverse,
-          apiExpenses[len(apiExpenses) - key - 1],
-        )
-    }
-
-    return map[string]interface{}{
-      "success":
-        map[string]interface{}{
-          "expenses": apiExpensesInverse,
-          "unit_measure": UnitMeasure,
-          "currency": Currency,
-        },
-    }
-  } else {
-    status := "DB is empty"
-
-    self.Helpers.CreateEvent("Warning", status)
-
-    return map[string]interface{}{
-      "error": status,
     }
   }
 }
@@ -503,49 +516,71 @@ func (self *Main) SetHandler(res *http.Request) map[string]interface{} {
 
         self.Helpers.CreateEvent("Log", "Deleted expense")
       }
+
+      return map[string]interface{}{
+        "success": true,
+      }
     } else {
-      value = 1
+      if len(self.Expenses) == 0 {
+        self.formExpenses()
+      }
+
+      var matchExpense map[string]interface{}
 
       for _, year := range self.Expenses {
         for _, month := range year {
           for _, expense := range month {
-            expense["value"] = value
-
             expenseId := expense["id"].(bson.ObjectId)
 
-            // WTF DATE?
+            fmt.Println(expense["id"])
+            fmt.Println(expenseId)
+            fmt.Println(bson.ObjectId.Hex(expenseId))
+            fmt.Println("____________")
 
-            if expense["date"] != nil && bson.ObjectId.Hex(expenseId) == reqExpense.Id {
-              date := expense["date"].(time.Time)
-
-              if expense["comment"] == nil {
-                self.MongoCollection.Insert(
-                  bson.M{
-                    "_id": expenseId,
-                    "date": date,
-                    "value": value,
-                  },
-                )
-              } else {
-                self.MongoCollection.Insert(
-                  bson.M{
-                    "_id": expenseId,
-                    "date": date,
-                    "value": value,
-                    "comment": expense["comment"].(string),
-                  },
-                )
-              }
+            if bson.ObjectId.Hex(expenseId) == reqExpense.Id {
+              matchExpense = expense
+              break
             }
           }
         }
       }
 
-      self.Helpers.CreateEvent("Log", "Added expense")
-    }
+      expenseId := matchExpense["id"].(bson.ObjectId)
 
-    return map[string]interface{}{
-      "success": true,
+      if len(bson.ObjectId.Hex(expenseId)) > 0 {
+        date := matchExpense["date"].(time.Time)
+
+        value = 1
+
+        if matchExpense["comment"] == nil {
+          self.MongoCollection.Insert(
+            bson.M{
+              "_id": expenseId,
+              "date": date,
+              "value": value,
+            },
+          )
+        } else {
+          self.MongoCollection.Insert(
+            bson.M{
+              "_id": expenseId,
+              "date": date,
+              "value": value,
+              "comment": matchExpense["comment"].(string),
+            },
+          )
+        }
+
+        self.Helpers.CreateEvent("Log", "Added expense")
+
+        return map[string]interface{}{
+          "success": true,
+        }
+      } else {
+        return map[string]interface{}{
+          "error": "Not found this expense ID",
+        }
+      }
     }
   } else {
     self.Helpers.CreateEvent("Log", "Failed request, validation error")
