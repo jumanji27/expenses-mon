@@ -30,6 +30,8 @@ type Main struct {
 
 const (
   WeeksInMonth = 5 // UI restrictions
+  DayTimestamp = 1 * 24 * 60 * 60
+  WeekTimestamp = 7 * DayTimestamp
 )
 
 
@@ -58,22 +60,19 @@ type GetDBExpense struct {
 const (
   UnitMeasure = 5000
   Currency = "RUB"
-  DayTimestamp = 1 * 24 * 60 * 60
-  WeekTimestamp = 7 * DayTimestamp
-  MinMonthTimestamp = 28 * DayTimestamp
-  MonthsInYear = 12
+  EmptyDBErrorMessage = "DB is empty"
 )
 
 func (self *Main) GetHandler() map[string]interface{} {
   self.formExpenses()
 
   if len(self.apiExpenses) > 0 {
-    apiExpensesInverse := [][][]map[string]interface{}{}
+    inverseExpenses := [][][]map[string]interface{}{}
 
     for key := range self.apiExpenses {
-      apiExpensesInverse =
+      inverseExpenses =
         append(
-          apiExpensesInverse,
+          inverseExpenses,
           self.apiExpenses[len(self.apiExpenses) - key - 1],
         )
     }
@@ -81,25 +80,28 @@ func (self *Main) GetHandler() map[string]interface{} {
     return map[string]interface{}{
       "success":
         map[string]interface{}{
-          "expenses": apiExpensesInverse,
+          "expenses": inverseExpenses,
           "unit_measure": UnitMeasure,
           "currency": Currency,
         },
     }
   } else {
-    status := "DB is empty"
-
-    self.Helpers.CreateEvent("Warning", status)
+    self.Helpers.CreateEvent("Warning", EmptyDBErrorMessage)
 
     return map[string]interface{}{
-      "error": status,
+      "error": EmptyDBErrorMessage,
     }
   }
 }
 
+const (
+  MonthsInYear = 12
+  MinMonthTimestamp = 28 * DayTimestamp
+)
+
 func (self *Main) formExpenses() {
   dbExpenses := []GetDBExpense{}
-  self.MongoCollection.Find(nil).All(&dbExpenses)
+  self.MongoCollection.Find(nil).Sort("date").All(&dbExpenses)
 
   dbExpensesLength := len(dbExpenses)
 
@@ -149,17 +151,18 @@ func (self *Main) formExpenses() {
       year := date.Year()
       month := date.Month()
       day := date.Day()
+      emptyId := bson.NewObjectId()
 
       if month != prevMonth {
         formatedMonths :=
           self.addEmptyExpenses(
             expensesMonth,
             apiExpensesMonth,
+            emptyId,
             true,
             map[string]int{
               "weekNumber": weekNumber,
               "timestamp": timestamp,
-              "gap": gap,
             },
           )
 
@@ -255,17 +258,21 @@ func (self *Main) formExpenses() {
       gap = weekNumber - prevWeekNumber
 
       if gap > 1 {
-        for extraItr := 1; extraItr < gap; extraItr++ {
+        for itr := 1; itr < gap; itr++ {
+          emptyDate :=
+            time.Unix(
+              int64(
+                timestamp - (gap - itr) * WeekTimestamp,
+              ),
+              0,
+            )
+
           expensesMonth =
             append(
               expensesMonth,
               map[string]interface{}{
-                "id": bson.NewObjectId(),
-                "date":
-                  time.Unix(
-                    int64(timestamp - gap * WeekTimestamp),
-                    0,
-                  ),
+                "id": emptyId,
+                "date": emptyDate,
               },
             )
 
@@ -273,22 +280,38 @@ func (self *Main) formExpenses() {
             append(
               apiExpensesMonth,
               map[string]interface{}{
-                "id": bson.NewObjectId(),
+                "id": emptyId,
               },
             )
         }
       } else if gap < 0 {
-        for extraItr := 1; extraItr < weekNumber; extraItr++ {
+        for itr := 1; itr < weekNumber; itr++ {
+          emptyDate :=
+            time.Unix(
+              int64(
+                timestamp - (weekNumber - itr) * WeekTimestamp,
+              ),
+              0,
+            )
+
+          if emptyDate.Month() != date.Month() {
+            day := int(date.Day())
+
+            emptyDate =
+              time.Unix(
+                int64(
+                  timestamp - (day - 1) * DayTimestamp,
+                ),
+                0,
+              )
+          }
+
           expensesMonth =
             append(
               expensesMonth,
               map[string]interface{}{
-                "id": bson.NewObjectId(),
-                "date":
-                  time.Unix(
-                    int64(timestamp - extraItr * WeekTimestamp),
-                    0,
-                  ),
+                "id": emptyId,
+                "date": emptyDate,
               },
             )
 
@@ -296,7 +319,7 @@ func (self *Main) formExpenses() {
             append(
               apiExpensesMonth,
               map[string]interface{}{
-                "id": bson.NewObjectId(),
+                "id": emptyId,
               },
             )
         }
@@ -311,11 +334,11 @@ func (self *Main) formExpenses() {
           self.addEmptyExpenses(
             expensesMonth,
             apiExpensesMonth,
+            emptyId,
             false,
             map[string]int{
               "weekNumber": weekNumber,
               "timestamp": timestamp,
-              "gap": gap,
             },
           )
 
@@ -330,11 +353,11 @@ func (self *Main) formExpenses() {
           gap := timestampGap / MinMonthTimestamp
 
           if gap > 0 && gap < MonthsInYear {
-            for extraItr := 0; extraItr < gap; extraItr++ {
+            for itr := 0; itr < gap; itr++ {
               emptyMonth := []map[string]interface{}{}
               emptyApiMonth := []map[string]interface{}{}
 
-              for extraExpenseItr := 0; extraExpenseItr < WeeksInMonth; extraExpenseItr++ {
+              for extraItr := 0; extraItr < WeeksInMonth; extraItr++ {
                 firstDayOfMonthTimestamp := timestamp - (day - 1) * DayTimestamp
                 firstDayOfMonth :=
                   time.Unix(
@@ -355,10 +378,10 @@ func (self *Main) formExpenses() {
                   append(
                     emptyMonth,
                     map[string]interface{}{
-                      "id": bson.NewObjectId(),
+                      "id": emptyId,
                       "date":
                         time.Unix(
-                          int64(timestamp + offset * DayTimestamp + extraExpenseItr * WeekTimestamp),
+                          int64(timestamp + offset * DayTimestamp + extraItr * WeekTimestamp),
                           0,
                         ),
                     },
@@ -368,7 +391,7 @@ func (self *Main) formExpenses() {
                   append(
                     emptyApiMonth,
                     map[string]interface{}{
-                      "id": bson.NewObjectId(),
+                      "id": emptyId,
                     },
                   )
               }
@@ -393,22 +416,27 @@ func (self *Main) formExpenses() {
 }
 
 func (self *Main) addEmptyExpenses(
-  month []map[string]interface{}, apiMonth []map[string]interface{}, redefineWeek bool, params map[string]int,
+  month []map[string]interface{}, apiMonth []map[string]interface{},
+  id bson.ObjectId, redefineWeek bool, params map[string]int,
   ) [2][]map[string]interface{} {
     addition := WeeksInMonth - params["weekNumber"]
 
     if addition > 0 {
-      for extraItr := 0; extraItr < addition; extraItr++ {
+      for itr := 0; itr < addition; itr++ {
+        emptyDate :=
+          time.Unix(
+            int64(
+              params["prevTimestamp"] - (addition - itr) * WeekTimestamp, // Prevtimestamp
+            ),
+            0,
+          )
+
         month =
           append(
             month,
             map[string]interface{}{
-              "id": bson.NewObjectId(),
-              "date":
-                time.Unix(
-                  int64(params["timestamp"] - params["gap"] * WeekTimestamp),
-                  0,
-                ),
+              "id": id,
+              "date": emptyDate,
             },
           )
 
@@ -416,12 +444,12 @@ func (self *Main) addEmptyExpenses(
           append(
             apiMonth,
             map[string]interface{}{
-              "id": bson.NewObjectId(),
+              "id": id,
             },
           )
 
-        if redefineWeek == true && extraItr + 1 == addition {
-          params["weekNumber"] = params["weekNumber"] + extraItr + 1
+        if redefineWeek == true && itr + 1 == addition {
+          params["weekNumber"] = params["weekNumber"] + itr + 1
         }
       }
     }
@@ -475,6 +503,7 @@ func (self *Main) SetHandler(res *http.Request) map[string]interface{} {
     ).One(&dbExpense)
 
     if len(dbExpense.Id) > 0 {
+      // Next receive any value instead of action
       if reqExpense.Action == "add" {
         value = dbExpense.Value + 1
       } else if reqExpense.Action == "remove" {
@@ -531,11 +560,6 @@ func (self *Main) SetHandler(res *http.Request) map[string]interface{} {
         for _, month := range year {
           for _, expense := range month {
             expenseId := expense["id"].(bson.ObjectId)
-
-            fmt.Println(expense["id"])
-            fmt.Println(expenseId)
-            fmt.Println(bson.ObjectId.Hex(expenseId))
-            fmt.Println("____________")
 
             if bson.ObjectId.Hex(expenseId) == reqExpense.Id {
               matchExpense = expense
