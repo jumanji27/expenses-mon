@@ -27,10 +27,10 @@ func (self *Main) Init(app *martini.ClassicMartini) {
     },
   )
 
-  const apiBaseURL = "/api/v1"
+  const APIBaseURL = "/api/v1"
 
   app.Post(
-    apiBaseURL,
+    APIBaseURL,
     func(render render.Render) {
       render.JSON(
         httpSuccess,
@@ -44,23 +44,23 @@ func (self *Main) Init(app *martini.ClassicMartini) {
   expensesModel := expensesModel.Main{}
   expensesModel.Init()
 
-  apiURL := apiBaseURL
+  APIURL := APIBaseURL
   handler := "/get"
-  apiURL += handler
+  APIURL += handler
 
   app.Post(
-    apiURL,
+    APIURL,
     func(render render.Render) {
       render.JSON(httpSuccess, expensesModel.GetHandler())
     },
   )
 
-  apiURL = apiBaseURL
+  APIURL = APIBaseURL
   handler = "/set"
-  apiURL += handler
+  APIURL += handler
 
   app.Post(
-    apiURL,
+    APIURL,
     func(res *http.Request, render render.Render) {
       render.JSON(
         httpSuccess,

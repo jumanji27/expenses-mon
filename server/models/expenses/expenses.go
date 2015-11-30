@@ -21,7 +21,7 @@ type Main struct {
   MongoCollection *mgo.Collection
   MongoSession *mgo.Session
   Expenses [][][]map[string]interface{}
-  apiExpenses [][][]map[string]interface{}
+  APIExpenses [][][]map[string]interface{}
   GetDBExpense
   SetReq
   SetDBExpenseRequired
@@ -66,14 +66,14 @@ const (
 )
 
 func (self *Main) GetHandler() map[string]interface{} {
-  if len(self.apiExpenses) > 0 {
+  if len(self.APIExpenses) > 0 {
     inverseExpenses := [][][]map[string]interface{}{}
 
-    for key := range self.apiExpenses {
+    for key := range self.APIExpenses {
       inverseExpenses =
         append(
           inverseExpenses,
-          self.apiExpenses[len(self.apiExpenses) - key - 1],
+          self.APIExpenses[len(self.APIExpenses) - key - 1],
         )
     }
 
@@ -109,8 +109,8 @@ func (self *Main) formExpenses() {
     expensesYear := [][]map[string]interface{}{}
     expensesMonth := []map[string]interface{}{}
 
-    apiExpensesYear := [][]map[string]interface{}{}
-    apiExpensesMonth := []map[string]interface{}{}
+    APIExpensesYear := [][]map[string]interface{}{}
+    APIExpensesMonth := []map[string]interface{}{}
 
     // In first iteration == current
     prevDate := dbExpenses[0].Date
@@ -140,8 +140,8 @@ func (self *Main) formExpenses() {
       self.Expenses = [][][]map[string]interface{}{}
     }
 
-    if len(self.apiExpenses) > 0 {
-      self.apiExpenses = [][][]map[string]interface{}{}
+    if len(self.APIExpenses) > 0 {
+      self.APIExpenses = [][][]map[string]interface{}{}
     }
 
     for key, dbExpense := range dbExpenses {
@@ -154,17 +154,17 @@ func (self *Main) formExpenses() {
       day := date.Day()
 
       if month != prevDate.Month() {
-        formatedMonths := self.addEmptyExpenses(expensesMonth, apiExpensesMonth, prevDate, true, weekNumber)
+        formatedMonths := self.addEmptyExpenses(expensesMonth, APIExpensesMonth, prevDate, true, weekNumber)
 
         expensesYear = append(expensesYear, formatedMonths[0])
-        apiExpensesYear = append(apiExpensesYear, formatedMonths[1])
+        APIExpensesYear = append(APIExpensesYear, formatedMonths[1])
 
         if year != prevDate.Year() {
           self.Expenses = append(self.Expenses, expensesYear)
-          self.apiExpenses = append(self.apiExpenses, apiExpensesYear)
+          self.APIExpenses = append(self.APIExpenses, APIExpensesYear)
 
           expensesYear = [][]map[string]interface{}{}
-          apiExpensesYear = [][]map[string]interface{}{}
+          APIExpensesYear = [][]map[string]interface{}{}
 
           fullYearLoop = true
         } else {
@@ -186,7 +186,7 @@ func (self *Main) formExpenses() {
         }
 
         expensesMonth = []map[string]interface{}{}
-        apiExpensesMonth = []map[string]interface{}{}
+        APIExpensesMonth = []map[string]interface{}{}
       }
 
       if firstDayOfMonthIsSunday == true && day == 1 {
@@ -201,7 +201,7 @@ func (self *Main) formExpenses() {
 
       firstDayOfMonthIsSunday = false
 
-      apiExpense := map[string]interface{}{}
+      APIExpense := map[string]interface{}{}
       commentLength := len(dbExpense.Comment)
 
       expense :=
@@ -215,7 +215,7 @@ func (self *Main) formExpenses() {
 
       if dbExpense.averageUSDRUBRate > 0 {
         if commentLength > 0 {
-          apiExpense =
+          APIExpense =
             map[string]interface{}{
               "id": dbExpense.Id,
               "value": dbExpense.Value,
@@ -223,7 +223,7 @@ func (self *Main) formExpenses() {
               "year_average_usd_rub_rate": dbExpense.averageUSDRUBRate,
             }
         } else {
-          apiExpense =
+          APIExpense =
             map[string]interface{}{
               "id": dbExpense.Id,
               "value": dbExpense.Value,
@@ -231,14 +231,14 @@ func (self *Main) formExpenses() {
             }
         }
       } else if commentLength > 0 {
-        apiExpense =
+        APIExpense =
           map[string]interface{}{
             "id": dbExpense.Id,
             "value": dbExpense.Value,
             "comment": dbExpense.Comment,
           }
       } else {
-        apiExpense =
+        APIExpense =
           map[string]interface{}{
             "id": dbExpense.Id,
             "value": dbExpense.Value,
@@ -270,9 +270,9 @@ func (self *Main) formExpenses() {
               },
             )
 
-          apiExpensesMonth =
+          APIExpensesMonth =
             append(
-              apiExpensesMonth,
+              APIExpensesMonth,
               map[string]interface{}{
                 "id": emptyId,
               },
@@ -312,9 +312,9 @@ func (self *Main) formExpenses() {
               },
             )
 
-          apiExpensesMonth =
+          APIExpensesMonth =
             append(
-              apiExpensesMonth,
+              APIExpensesMonth,
               map[string]interface{}{
                 "id": emptyId,
               },
@@ -323,17 +323,17 @@ func (self *Main) formExpenses() {
       }
 
       expensesMonth = append(expensesMonth, expense)
-      apiExpensesMonth = append(apiExpensesMonth, apiExpense)
+      APIExpensesMonth = append(APIExpensesMonth, APIExpense)
 
       fmt.Println("DB")
       fmt.Println(expense["date"])
 
       // Non full year
       if key + 1 == dbExpensesLength && fullYearLoop != true {
-        formatedMonths := self.addEmptyExpenses(expensesMonth, apiExpensesMonth, prevDate, false, weekNumber)
+        formatedMonths := self.addEmptyExpenses(expensesMonth, APIExpensesMonth, prevDate, false, weekNumber)
 
         expensesYear = append(expensesYear, formatedMonths[0])
-        apiExpensesYear = append(apiExpensesYear, formatedMonths[1])
+        APIExpensesYear = append(APIExpensesYear, formatedMonths[1])
 
         now := time.Now()
         timestampGap := int(now.Unix()) - timestamp
@@ -387,13 +387,13 @@ func (self *Main) formExpenses() {
               }
 
               expensesYear = append(expensesYear, emptyMonth)
-              apiExpensesYear = append(apiExpensesYear, emptyApiMonth)
+              APIExpensesYear = append(APIExpensesYear, emptyApiMonth)
             }
           }
         }
 
         self.Expenses = append(self.Expenses, expensesYear)
-        self.apiExpenses = append(self.apiExpenses, apiExpensesYear)
+        self.APIExpenses = append(self.APIExpenses, APIExpensesYear)
 
         // We haven't optional behavior for empty months > 12 (empty years). If we need this logic, it'll be here
       }
@@ -405,7 +405,7 @@ func (self *Main) formExpenses() {
 }
 
 func (self *Main) addEmptyExpenses(
-  month []map[string]interface{}, apiMonth []map[string]interface{},
+  month []map[string]interface{}, APIMonth []map[string]interface{},
   prevDate time.Time, redefineWeek bool, weekNumber int,
   ) [2][]map[string]interface{} {
     id := bson.NewObjectId()
@@ -433,9 +433,9 @@ func (self *Main) addEmptyExpenses(
             },
           )
 
-        apiMonth =
+        APIMonth =
           append(
-            apiMonth,
+            APIMonth,
             map[string]interface{}{
               "id": id,
             },
@@ -450,7 +450,7 @@ func (self *Main) addEmptyExpenses(
     result := [2][]map[string]interface{}{}
 
     result[0] = month
-    result[1] = apiMonth
+    result[1] = APIMonth
 
     return result
 }
@@ -543,18 +543,19 @@ func (self *Main) SetHandler(res *http.Request) map[string]interface{} {
         "success": true,
       }
     } else {
-      if len(self.Expenses) == 0 {
-        self.formExpenses()
-      }
-
       var matchExpense map[string]interface{}
 
-      for _, year := range self.Expenses {
-        for _, month := range year {
-          for _, expense := range month {
+      value = 1
+
+      for key, year := range self.Expenses {
+        for monthKey, month := range year {
+          for expenseKey, expense := range month {
             expenseId := expense["id"].(bson.ObjectId)
 
             if bson.ObjectId.Hex(expenseId) == reqExpense.Id {
+              expense["value"] = value
+              self.APIExpenses[key][monthKey][expenseKey]["value"] = value
+
               matchExpense = expense
               break
             }
@@ -566,10 +567,6 @@ func (self *Main) SetHandler(res *http.Request) map[string]interface{} {
 
       if len(bson.ObjectId.Hex(expenseId)) > 0 {
         date := matchExpense["date"].(time.Time)
-
-        value = 1
-
-        fmt.Println(date)
 
         if matchExpense["comment"] == nil {
           self.MongoCollection.Insert(
