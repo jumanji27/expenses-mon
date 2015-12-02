@@ -37,9 +37,7 @@ export default class Expenses extends Backbone.Model {
       success: (res) => {
         that.sendStatusToView(params.page, res);
 
-        params.view.updateHTML({
-          decrement: params.forReq.action === 'remove' ? true : false
-        });
+        params.view.updateHTML(params.forReq.value);
       }
     });
   }
