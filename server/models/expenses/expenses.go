@@ -53,7 +53,7 @@ type DBExpense struct {
   Date time.Time
   Value int
   Comment string
-  averageUSDRUBRate float32
+  YearAverageUSDRUBRate float64 `bson:"year_average_usd_rub_rate"` // Set to DB in handle mode
 }
 
 const (
@@ -118,13 +118,6 @@ func (self *Main) formExpenses() {
     var prevWeekNumber int
     var firstDayOfMonthIsSunday bool
     var fullYearLoop bool
-
-    // TODO: Move to db
-    // averageUSDRUBRate :=
-    //   map[int]float32{
-    //     2013: 31.9,
-    //     2014: 38.6,
-    //   }
 
     monthOffset := int(dbExpenses[0].Date.Weekday()) - 1  // Sunday is last weekday in EU
 
@@ -207,24 +200,24 @@ func (self *Main) formExpenses() {
           "date": dbExpense.Date,
           "value": dbExpense.Value,
           "comment": dbExpense.Comment,
-          "year_average_usd_rub_rate": dbExpense.averageUSDRUBRate,
+          "year_average_usd_rub_rate": dbExpense.YearAverageUSDRUBRate,
         }
 
-      if dbExpense.averageUSDRUBRate > 0 {
+      if dbExpense.YearAverageUSDRUBRate > 0 {
         if commentLength > 0 {
           APIExpense =
             map[string]interface{}{
               "id": dbExpense.Id,
               "value": dbExpense.Value,
               "comment": dbExpense.Comment,
-              "year_average_usd_rub_rate": dbExpense.averageUSDRUBRate,
+              "year_average_usd_rub_rate": dbExpense.YearAverageUSDRUBRate,
             }
         } else {
           APIExpense =
             map[string]interface{}{
               "id": dbExpense.Id,
               "value": dbExpense.Value,
-              "year_average_usd_rub_rate": dbExpense.averageUSDRUBRate,
+              "year_average_usd_rub_rate": dbExpense.YearAverageUSDRUBRate,
             }
         }
       } else if commentLength > 0 {
