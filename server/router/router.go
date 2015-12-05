@@ -21,7 +21,7 @@ func (self *Main) Init(app *martini.ClassicMartini) {
   )
 
   app.Get(
-    "/**",
+    "/",
     func(render render.Render) {
       render.HTML(httpSuccess, "main", nil)
     },

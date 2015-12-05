@@ -3,6 +3,10 @@ export default class Month extends Backbone.View {
     super({
       el: '.js_p-main'
     });
+
+    let total = $('.js_year__total')
+
+    console.log(total);
   }
 
 
@@ -12,5 +16,7 @@ export default class Month extends Backbone.View {
         month: month
       })
     );
+
+
   }
 }
