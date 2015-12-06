@@ -69,7 +69,8 @@ export default class Expenses extends Backbone.Model {
         rawMonth.map((apiExpense, expenseKey) => {
           let expense = {
             id: apiExpense.id,
-            value: apiExpense.value
+            value: apiExpense.value,
+            yearAverageUSDRUBRate: apiExpense.year_average_usd_rub_rate
           }
 
           if (apiExpense.value) {

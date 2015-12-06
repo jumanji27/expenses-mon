@@ -35,7 +35,11 @@ export default class Main extends Backbone.View {
     this.expenseView = new Expense(this.model);
 
     this.model.get('expenses').map((year, key) => {
-      yearView.render(mainEl);
+      yearView.render({
+        target: mainEl,
+        expenses: year,
+        unitMeasure: this.model.get('unitMeasure')
+      });
 
       year.map((month, monthKey) => {
         let yearEl = mainEl.children('.js_year').eq(key);
