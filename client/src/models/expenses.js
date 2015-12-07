@@ -37,7 +37,7 @@ export default class Expenses extends Backbone.Model {
       success: (res) => {
         that.sendStatusToView(args.page, res);
 
-        // Update views instead of model — bad desing for scaling!
+        // Update views instead of model — bad design for scaling!
         args.expenseView.updateHTML(args.forReq.value);
         args.yearView.updateTotal(args.yearId, args.forReq.value);
       }
