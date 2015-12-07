@@ -37,7 +37,8 @@ export default class Expenses extends Backbone.Model {
       success: (res) => {
         that.sendStatusToView(params.page, res);
 
-        params.view.updateHTML(params.forReq.value);
+        params.expenseView.updateHTML(params.forReq.value);
+        params.yearView.updateTotal(params.yearId, params.forReq.value);
       }
     });
   }

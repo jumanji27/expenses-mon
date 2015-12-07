@@ -14,6 +14,7 @@ export default class Main extends Backbone.View {
     });
 
     this.model = model;
+    this.el = $(this.el);
 
     this.listenTo(
       this.model,
@@ -28,15 +29,16 @@ export default class Main extends Backbone.View {
   render(target) {
     target.html(tmpl_components_main_main());
 
-    let yearView = new Year(),
-      monthView = new Month(),
-      mainEl = $(this.el).find('.js_p-main');
+    let monthView = new Month(),
+      mainEl = this.el.find('.js_p-main');
 
+    this.yearView = new Year();
     this.expenseView = new Expense(this.model);
 
     this.model.get('expenses').map((year, key) => {
-      yearView.render({
+      this.yearView.render({
         target: mainEl,
+        id: key + 1,
         expenses: year,
         unitMeasure: this.model.get('unitMeasure')
       });
@@ -58,21 +60,21 @@ export default class Main extends Backbone.View {
       });
     });
 
-    $(this.el).find('.js_popup-start').simplePopup();
+    this.el.find('.js_popup-start').simplePopup();
   }
 
   popupAdd() {
-    let expense = $(this.el).find('.js_popup-start_active');
-
     let params = {
       page: this,
-      view: this.expenseView,
+      yearView: this.yearView,
+      yearId: this.el.find('.js_year').attr('data-id'),
+      expenseView: this.expenseView,
       forReq: {
         value: 1,
-        id: expense.attr('data-id')
+        id: this.el.find('.js_popup-start_active').attr('data-id')
       }
     },
-      comment = $(this.el).find('.js_popup__comment').val();
+      comment = this.el.find('.js_popup__comment').val();
 
     if (comment.length > 0) {
       params.forReq.comment = comment;
@@ -82,7 +84,7 @@ export default class Main extends Backbone.View {
   }
 
   popupRemove() {
-    let expense = $(this.el).find('.js_popup-start_active'),
+    let expense = this.el.find('.js_popup-start_active'),
       value =
         parseInt(
           expense.attr('data-value')
@@ -91,7 +93,9 @@ export default class Main extends Backbone.View {
     if (value) {
       this.model.setReq({
         page: this,
-        view: this.expenseView,
+        yearView: this.yearView,
+        yearId: this.el.find('.js_year').attr('data-id'),
+        expenseView: this.expenseView,
         forReq: {
           value: -1,
           id: expense.attr('data-id')
@@ -101,7 +105,7 @@ export default class Main extends Backbone.View {
   }
 
   popupUpdateStatus(params) {
-    let status = $(this.el).find('.js_popup__status'),
+    let status = this.el.find('.js_popup__status'),
       statusHasErrorClass = status.hasClass('js_popup__status-error');
 
     if (params.success) {

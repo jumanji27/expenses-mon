@@ -4,4 +4,6 @@ client/builder/bower_components
 client/builder/node_modules
 client/builder/tmp
 
-client/public
+client/public/main.css
+client/public/main.js
+client/public/img/views

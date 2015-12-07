@@ -5,6 +5,7 @@ export default class Expense extends Backbone.View {
     });
 
     this.model = model;
+    this.el = $(this.el);
   }
 
 
@@ -19,7 +20,7 @@ export default class Expense extends Backbone.View {
   }
 
   updateHTML(value) {
-    let expense = $(this.el).find('.js_popup-start_active'),
+    let expense = this.el.find('.js_popup-start_active'),
       HTMLValue = expense.attr('data-value');
 
     if (HTMLValue) {
