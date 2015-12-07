@@ -67,7 +67,7 @@ export default class Main extends Backbone.View {
     let params = {
       page: this,
       yearView: this.yearView,
-      yearId: this.el.find('.js_year').attr('data-id'),
+      yearId: this.el.find('.js_year_active').attr('data-id'),
       expenseView: this.expenseView,
       forReq: {
         value: 1,
@@ -94,7 +94,7 @@ export default class Main extends Backbone.View {
       this.model.setReq({
         page: this,
         yearView: this.yearView,
-        yearId: this.el.find('.js_year').attr('data-id'),
+        yearId: this.el.find('.js_year_active').attr('data-id'),
         expenseView: this.expenseView,
         forReq: {
           value: -1,

@@ -16,7 +16,7 @@ export default class Year extends Backbone.View {
   }
 
   updateTotal(id, value) {
-    console.log($('.js_year[data-id=' + id + ']').children('.js_year__total'));
+    console.log(id);
 
     $('.js_year[data-id=' + id + ']').children('.js_year__total').text(
       this.getTotal({
