@@ -5,6 +5,7 @@ export default class Year extends Backbone.View {
     });
 
     this.reserveParams = [];
+    this.updateValue = 0;
   }
 
 
@@ -28,8 +29,11 @@ export default class Year extends Backbone.View {
 
   getTotal(args) {
     let valueSum = 0,
-      averageUSDRUBrate,
-      updateValue = args.updateValue || 0;
+      averageUSDRUBrate;
+
+    if (args.updateValue) {
+      this.updateValue += args.updateValue;
+    }
 
     if (args.expenses) {
       this.reserveParams.push(args);
@@ -49,7 +53,7 @@ export default class Year extends Backbone.View {
       });
     });
 
-    let totalRUB = (valueSum + updateValue) * args.unitMeasure,
+    let totalRUB = (valueSum + this.updateValue) * args.unitMeasure,
       total = totalRUB.toString().replace(/000$/g, 'k');
 
     if (averageUSDRUBrate) {
