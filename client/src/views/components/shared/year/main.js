@@ -3,39 +3,41 @@ export default class Year extends Backbone.View {
     super({
       el: '.js_p-main'
     });
+
+    this.reserveParams = [];
   }
 
 
-  render(params) {
-    params.target.append(
+  render(args) {
+    args.target.append(
       tmpl_components_shared_year_main({
-        id: params.id,
-        total: this.getTotal(params)
+        id: args.id,
+        total: this.getTotal(args)
       })
     );
   }
 
   updateTotal(id, value) {
-    console.log(id);
-
-    $('.js_year[data-id=' + id + ']').children('.js_year__total').text(
+    $('.js_year[data-id="' + id + '"]').children('.js_year__total').text(
       this.getTotal({
+        yearId: id,
         updateValue: value
       })
     );
   }
 
-  getTotal(params) {
+  getTotal(args) {
     let valueSum = 0,
-      averageUSDRUBrate;
+      averageUSDRUBrate,
+      updateValue = args.updateValue || 0;
 
-    if (params.expenses) {
-      this.reserveParams = params;
+    if (args.expenses) {
+      this.reserveParams.push(args);
     } else {
-      params = this.reserveParams;
+      args = this.reserveParams[args.yearId - 1];
     }
 
-    params.expenses.map((month) => {
+    args.expenses.map((month) => {
       month.map((expense) => {
         if (expense.value) {
           valueSum += expense.value;
@@ -47,8 +49,7 @@ export default class Year extends Backbone.View {
       });
     });
 
-    let updateValue = params.updateValue || 0,
-      totalRUB = (valueSum + updateValue) * params.unitMeasure,
+    let totalRUB = (valueSum + updateValue) * args.unitMeasure,
       total = totalRUB.toString().replace(/000$/g, 'k');
 
     if (averageUSDRUBrate) {

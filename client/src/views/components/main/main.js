@@ -64,16 +64,17 @@ export default class Main extends Backbone.View {
   }
 
   popupAdd() {
-    let params = {
-      page: this,
-      yearView: this.yearView,
-      yearId: this.el.find('.js_year_active').attr('data-id'),
-      expenseView: this.expenseView,
-      forReq: {
-        value: 1,
-        id: this.el.find('.js_popup-start_active').attr('data-id')
-      }
-    },
+    let expense = this.el.find('.js_popup-start_active'),
+      params = {
+        page: this,
+        yearView: this.yearView,
+        yearId: expense.closest('.js_year').attr('data-id'),
+        expenseView: this.expenseView,
+        forReq: {
+          value: 1,
+          id: expense.attr('data-id')
+        }
+      },
       comment = this.el.find('.js_popup__comment').val();
 
     if (comment.length > 0) {
@@ -94,7 +95,7 @@ export default class Main extends Backbone.View {
       this.model.setReq({
         page: this,
         yearView: this.yearView,
-        yearId: this.el.find('.js_year_active').attr('data-id'),
+        yearId: expense.closest('.js_year').attr('data-id'),
         expenseView: this.expenseView,
         forReq: {
           value: -1,
@@ -104,11 +105,11 @@ export default class Main extends Backbone.View {
     }
   }
 
-  popupUpdateStatus(params) {
+  popupUpdateStatus(args) {
     let status = this.el.find('.js_popup__status'),
       statusHasErrorClass = status.hasClass('js_popup__status-error');
 
-    if (params.success) {
+    if (args.success) {
       if (statusHasErrorClass) {
         status.removeClass('js_popup__status-error');
       }
@@ -116,6 +117,6 @@ export default class Main extends Backbone.View {
       status.addClass('js_popup__status-error');
     }
 
-    status.text(params.text);
+    status.text(args.text);
   }
 }
