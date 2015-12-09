@@ -9,7 +9,7 @@ Install Node (0.12.7)
 ##### Next build and run (all paths from root of project sources)
 
     sudo cp -r server/vend ~/go/src
-    cd client/builder && npm install && bower install && sudo npm install -g gulp bower
+    cd client/builder && npm install && bower install && sudo npm install -g gulp@3.9.0 bower@1.6.5
 
 ##### Build and run
 
