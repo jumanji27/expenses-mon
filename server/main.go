@@ -33,6 +33,6 @@ func main() {
   helpers := helpers.Main{}
   helpers.CreateEvent("Log", "EM starting!")
 
-  martiniApp.RunOnAddr(":5000")
+  martiniApp.RunOnAddr(":3000")
   martiniApp.Run()
 }
