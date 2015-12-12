@@ -1,6 +1,18 @@
 {
-  "name": "Expenses Monitor",
+  "name": "Expenses Mon",
   "icons": [
+    {
+      "src": "img/fav/96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "density": 2.0
+    },
+    {
+      "src": "img/fav/144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "density": 3.0
+    },
     {
       "src": "img/fav/192.png",
       "sizes": "192x192",
