@@ -116,7 +116,6 @@ func (self *Main) formExpenses() {
     var weekNumber int
     var prevWeekNumber int
     var firstDayOfMonthIsSunday bool
-    var fullYearLoop bool
 
     monthOffset := int(dbExpenses[0].Date.Weekday()) - 1  // Sunday is last weekday in EU
 
@@ -154,10 +153,6 @@ func (self *Main) formExpenses() {
 
           expensesYear = [][]map[string]interface{}{}
           APIExpensesYear = [][]map[string]interface{}{}
-
-          fullYearLoop = true
-        } else {
-          fullYearLoop = false
         }
 
         firstMonthDay :=
@@ -312,53 +307,65 @@ func (self *Main) formExpenses() {
       prevDate = date
       prevWeekNumber = weekNumber
 
-      // Non full year
-      if key + 1 == dbExpensesLength && fullYearLoop != true {
+      if key + 1 == dbExpensesLength {
+        // Non full year
         formatedMonths := self.addEmptyExpenses(expensesMonth, APIExpensesMonth, prevDate, false, weekNumber)
 
         expensesYear = append(expensesYear, formatedMonths[0])
         APIExpensesYear = append(APIExpensesYear, formatedMonths[1])
 
+        var yearIsAlreadyClosed bool
+
         now := time.Now()
         currentMonth := now.Month()
         currentYear := now.Year()
-        monthInt := int(month)
-        gap := int(currentMonth) - monthInt
 
-        // Fill empty months
-        if month != currentMonth {
-          for itr := 0; itr < gap; itr++ {
-            extraMonths := self.addExtraMonths(date, itr)
+        // Fill empty months or years
+        if month != currentMonth || year != currentYear {
+          monthInt := int(month)
+          gap := int(currentMonth) - monthInt
 
-            expensesYear = append(expensesYear, extraMonths[0])
-            APIExpensesYear = append(APIExpensesYear, extraMonths[1])
-          }
-        }
+          if month != currentMonth {
+            for itr := 0; itr < gap; itr++ {
+              extraMonths := self.addExtraMonths(date, itr)
 
-        self.Expenses = append(self.Expenses, expensesYear)
-        self.APIExpenses = append(self.APIExpenses, APIExpensesYear)
-
-        if year != currentYear {
-          extraYears := int(currentYear) - int(year)
-
-          if gap < 0 {
-            gap = gap + MonthsInYear
-          }
-
-          for itr := 0; itr < extraYears; itr++ {
-            emptyYear := [][]map[string]interface{}{}
-            APIEmptyYear := [][]map[string]interface{}{}
-
-            for monthItr := 0; monthItr < gap; monthItr++ {
-              extraMonths := self.addExtraMonths(date, monthItr)
-
-              emptyYear = append(emptyYear, extraMonths[0])
-              APIEmptyYear = append(APIEmptyYear, extraMonths[1])
+              expensesYear = append(expensesYear, extraMonths[0])
+              APIExpensesYear = append(APIExpensesYear, extraMonths[1])
             }
 
-            self.Expenses = append(self.Expenses, emptyYear)
-            self.APIExpenses = append(self.APIExpenses, APIEmptyYear)
+            self.Expenses = append(self.Expenses, expensesYear)
+            self.APIExpenses = append(self.APIExpenses, APIExpensesYear)
           }
+
+          if year != currentYear {
+            extraYears := int(currentYear) - int(year)
+
+            if gap < 0 {
+              gap = gap + MonthsInYear
+            }
+
+            for itr := 0; itr < extraYears; itr++ {
+              emptyYear := [][]map[string]interface{}{}
+              APIEmptyYear := [][]map[string]interface{}{}
+
+              for monthItr := 0; monthItr < gap; monthItr++ {
+                extraMonths := self.addExtraMonths(date, monthItr)
+
+                emptyYear = append(emptyYear, extraMonths[0])
+                APIEmptyYear = append(APIEmptyYear, extraMonths[1])
+              }
+
+              self.Expenses = append(self.Expenses, emptyYear)
+              self.APIExpenses = append(self.APIExpenses, APIEmptyYear)
+            }
+          }
+
+          yearIsAlreadyClosed = true
+        }
+
+        if yearIsAlreadyClosed != true {
+          self.Expenses = append(self.Expenses, expensesYear)
+          self.APIExpenses = append(self.APIExpenses, APIExpensesYear)
         }
       }
     }
