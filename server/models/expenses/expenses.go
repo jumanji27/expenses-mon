@@ -43,7 +43,7 @@ func (self *Main) Init() {
   }
 
   self.MongoSession = session
-  self.MongoCollection = session.DB("expense_mon").C("index")
+  self.MongoCollection = session.DB("expenses_mon").C("index")
 
   self.Helpers.CreateEvent("Log", "Mongo ready")
 }
@@ -53,7 +53,7 @@ type DBExpense struct {
   Date time.Time
   Value int
   Comment string
-  YearAverageUSDRUBRate float64 `bson:"year_average_usd_rub_rate"` // Set to DB in handle mode
+  YearAverageUSDRUBRate float64 `bson:"year_average_usd_rub_rate"` // Set to DB in handle mode from audit-it.ru
 }
 
 const (
@@ -95,7 +95,6 @@ func (self *Main) GetHandler() map[string]interface{} {
 
 const (
   MonthsInYear = 12
-  MinMonthTimestamp = 28 * DayTimestamp
 )
 
 func (self *Main) formExpenses() {
@@ -323,44 +322,44 @@ func (self *Main) formExpenses() {
         now := time.Now()
         currentMonth := now.Month()
         currentYear := now.Year()
+        monthInt := int(month)
+        gap := int(currentMonth) - monthInt
 
         // Fill empty months
-        if month != currentMonth || year != currentYear {
-          monthInt := int(month)
-          gap := int(currentMonth) - monthInt
-
+        if month != currentMonth {
           for itr := 0; itr < gap; itr++ {
             extraMonths := self.addExtraMonths(date, itr)
 
             expensesYear = append(expensesYear, extraMonths[0])
             APIExpensesYear = append(APIExpensesYear, extraMonths[1])
           }
-
-          if year != currentYear {
-            extraYears := int(currentYear) - int(year)
-
-            monthGap := MonthsInYear - monthInt + extraYears * MonthsInYear
-            gap = monthGap / MonthsInYear
-
-            for itr := 0; itr < gap; itr++ {
-              emptyYear := [][]map[string]interface{}{}
-              APIEmptyYear := [][]map[string]interface{}{}
-
-              for monthItr := 1; monthItr < MonthsInYear; monthItr++ {
-                extraMonths := self.addExtraMonths(date, monthItr)
-
-                emptyYear = append(emptyYear, extraMonths[0])
-                APIEmptyYear = append(emptyYear, extraMonths[1])
-              }
-
-              self.Expenses = append(self.Expenses, emptyYear)
-              self.APIExpenses = append(self.APIExpenses, APIEmptyYear)
-            }
-          }
         }
 
         self.Expenses = append(self.Expenses, expensesYear)
         self.APIExpenses = append(self.APIExpenses, APIExpensesYear)
+
+        if year != currentYear {
+          extraYears := int(currentYear) - int(year)
+
+          if gap < 0 {
+            gap = gap + MonthsInYear
+          }
+
+          for itr := 0; itr < extraYears; itr++ {
+            emptyYear := [][]map[string]interface{}{}
+            APIEmptyYear := [][]map[string]interface{}{}
+
+            for monthItr := 0; monthItr < gap; monthItr++ {
+              extraMonths := self.addExtraMonths(date, monthItr)
+
+              emptyYear = append(emptyYear, extraMonths[0])
+              APIEmptyYear = append(APIEmptyYear, extraMonths[1])
+            }
+
+            self.Expenses = append(self.Expenses, emptyYear)
+            self.APIExpenses = append(self.APIExpenses, APIEmptyYear)
+          }
+        }
       }
     }
   }
