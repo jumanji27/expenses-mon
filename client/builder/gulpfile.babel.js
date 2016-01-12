@@ -70,7 +70,7 @@ gulp.task('concat_vendor', () => {
 
 gulp.task('compile_babel', () => {
   return browserify({
-    entries: ['../src/router.js', '../src/main.js'],
+    entries: '../src/main.js',
     debug: true
   })
   .transform(babelify)

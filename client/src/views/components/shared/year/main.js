@@ -31,7 +31,7 @@ export default class Year extends Backbone.View {
     let valueSum = 0,
       averageUSDRUBrate;
 
-    if (args.updateValue) {
+    if (args.updateValue || args.updateValue === 0) {
       this.updateValue += args.updateValue;
     }
 
