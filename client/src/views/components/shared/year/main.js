@@ -55,13 +55,15 @@ export default class Year extends Backbone.View {
 
     let year = new Date().getFullYear() - args.id + 1,
       totalRUB = (valueSum + this.updateValue) * args.unitMeasure,
-      total = totalRUB.toString().replace(/000$/g, 'k');
+      total = totalRUB.toString().replace(/000$/g, 'k'),
+      totalWithCurrency;
 
     if (averageUSDRUBrate) {
-      let totalUSD = (totalRUB / averageUSDRUBrate).toString().replace(/000$/g, 'k'),
-        totalWithCurrency = total + ' / ' + averageUSDRUBrate + ' = $' + Math.round(totalUSD / 100) / 10 + 'k';
+      let totalUSD = (totalRUB / averageUSDRUBrate).toString().replace(/000$/g, 'k');
+
+      totalWithCurrency = total + ' / ' + averageUSDRUBrate + ' = $' + Math.round(totalUSD / 100) / 10 + 'k';
     } else {
-      let totalWithCurrency = total;
+      totalWithCurrency = total;
     }
 
     return year + ': ' + totalWithCurrency;
