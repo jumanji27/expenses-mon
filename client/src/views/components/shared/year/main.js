@@ -53,15 +53,17 @@ export default class Year extends Backbone.View {
       });
     });
 
-    let totalRUB = (valueSum + this.updateValue) * args.unitMeasure,
+    let year = new Date().getFullYear() - args.id + 1,
+      totalRUB = (valueSum + this.updateValue) * args.unitMeasure,
       total = totalRUB.toString().replace(/000$/g, 'k');
 
     if (averageUSDRUBrate) {
-      let totalUSD = (totalRUB / averageUSDRUBrate).toString().replace(/000$/g, 'k');
-
-      return total + ' / ' + averageUSDRUBrate + ' = $' + Math.round(totalUSD / 100) / 10 + 'k';
+      let totalUSD = (totalRUB / averageUSDRUBrate).toString().replace(/000$/g, 'k'),
+        totalWithCurrency = total + ' / ' + averageUSDRUBrate + ' = $' + Math.round(totalUSD / 100) / 10 + 'k';
     } else {
-      return total;
+      let totalWithCurrency = total;
     }
+
+    return year + ': ' + totalWithCurrency;
   }
 }
