@@ -1,38 +1,37 @@
 package main
 
 import (
-  // "fmt"
-  // "reflect"
+	// "fmt"
+	// "reflect"
 
-  "github.com/go-martini/martini"
-  "github.com/martini-contrib/render"
+	"github.com/go-martini/martini"
+	"github.com/martini-contrib/render"
 
-  "expenses-mon/server/router"
-  "expenses-mon/server/helpers"
+	"expenses-mon/server/helpers"
+	"expenses-mon/server/router"
 )
 
-
 func main() {
-  martiniApp := martini.Classic()
+	martiniApp := martini.Classic()
 
-  martiniApp.Use(render.Renderer())
-  martiniApp.Use(
-    render.Renderer(
-      render.Options{
-        Directory: "server/views",
-      },
-    ),
-  )
-  martiniApp.Use(
-    martini.Static("client/public"),
-  )
+	martiniApp.Use(render.Renderer())
+	martiniApp.Use(
+		render.Renderer(
+			render.Options{
+				Directory: "server/views",
+			},
+		),
+	)
+	martiniApp.Use(
+		martini.Static("client/public"),
+	)
 
-  router := router.Main{}
-  router.Init(martiniApp)
+	router := router.Main{}
+	router.Init(martiniApp)
 
-  helpers := helpers.Main{}
-  helpers.CreateEvent("Log", "EM starting!")
+	helpers := helpers.Main{}
+	helpers.CreateEvent("Log", "EM starting!")
 
-  martiniApp.RunOnAddr(":3000")
-  martiniApp.Run()
+	martiniApp.RunOnAddr(":3000")
+	martiniApp.Run()
 }
