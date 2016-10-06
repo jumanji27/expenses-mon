@@ -31,11 +31,10 @@ export default class Expenses extends Backbone.Model {
       url: this.API_URL + 'set',
       data: JSON.stringify(args.forReq),
       success: (res) => {
-        this.sendStatusToView(args.page, res);
-
         // Update views instead of model — bad design for scaling!
         args.expenseView.updateHTML(args.forReq.value);
         args.yearView.updateTotal(args.yearId, args.forReq.value);
+        this.sendStatusToView(args.page, res);
       }
     });
   }

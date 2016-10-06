@@ -126,13 +126,17 @@ export default class Main extends Backbone.View {
       if (typeof args.text === 'object') {
         const REPLACE_SYMBOL = '#';
 
+        let expenseAmount =
+          this.el.find('.js_popup-start_active').text();
+
         status.text(
           args.text.reduce((previousChunk, currentChunk) => {
             if (currentChunk === REPLACE_SYMBOL) {
-              let expenseAmount =
-                this.el.find('.js_popup-start_active').text();
-
-              return `${previousChunk} (${expenseAmount})`;
+              if (expenseAmount.length) {
+                return `${previousChunk} (${expenseAmount})`;
+              } else {
+                return previousChunk;
+              }
             }
             return previousChunk + currentChunk;
           })
