@@ -11,31 +11,27 @@ export default class Expenses extends Backbone.Model {
 
 
   getReq() {
-    let that = this;
-
     $.ajax({
       type: this.API_HTTP_METHOD,
       url: this.API_URL + 'get',
       success: (res) => {
-        that.set({
+        this.set({
           unitMeasure: res.success.unit_measure
         });
-        that.set({
-          expenses: that.format(that, res.success.expenses)
+        this.set({
+          expenses: this.format(res.success.expenses)
         });
       }
     });
   }
 
   setReq(args) {
-    let that = this;
-
     $.ajax({
       type: this.API_HTTP_METHOD,
       url: this.API_URL + 'set',
       data: JSON.stringify(args.forReq),
       success: (res) => {
-        that.sendStatusToView(args.page, res);
+        this.sendStatusToView(args.page, res);
 
         // Update views instead of model — bad design for scaling!
         args.expenseView.updateHTML(args.forReq.value);
@@ -50,7 +46,8 @@ export default class Expenses extends Backbone.Model {
     }
 
     if (res.success) {
-      params.text = 'Success!';
+      // # — special symbol for replacements
+      params.text = ['Success!', '#'];
     } else {
       params.text = res.error;
     }
@@ -58,7 +55,7 @@ export default class Expenses extends Backbone.Model {
     view.popupUpdateStatus(params);
   }
 
-  format(that, dbExpenses) {
+  format(dbExpenses) {
     const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
     let expenses = [];
@@ -77,8 +74,7 @@ export default class Expenses extends Backbone.Model {
           }
 
           if (apiExpense.value) {
-            let rawAmount = apiExpense.value * that.get('unitMeasure'),
-              amount = rawAmount.toString().replace(/000$/g, 'k');
+            let amount = this.formatAmount(apiExpense.value);
 
             expense.amount = amount;
           }
@@ -95,5 +91,11 @@ export default class Expenses extends Backbone.Model {
     });
 
     return expenses;
+  }
+
+  formatAmount(value) {
+    let rawAmount = value * this.get('unitMeasure');
+
+    return rawAmount.toString().replace(/000$/g, 'k');
   }
 }

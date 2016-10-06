@@ -100,7 +100,15 @@ gulp.task('concat_js', () => {
 });
 
 gulp.task('compile_stylus', function () {
-  return gulp.src('../src/**/*.styl')
+  return gulp.src(
+      [
+        '../src/views/layouts/main/reset.styl',
+        '../src/views/layouts/main/wrapper.styl',
+        '../src/views/layouts/main/main.styl',
+        '../src/views/components/**/*.styl',
+        '../src/views/layouts/main/js.styl'
+      ]
+    )
     .pipe(stylus())
     .pipe(concat('main.css'))
     .pipe(gulp.dest('../public'))

@@ -8,7 +8,7 @@ Install Node (0.12.7)
 
 ##### In CLI
 
-    sudo cp -r server/vend ~/go/src
+    sudo cp -r server/vend/* ~/go/src
     cd client/builder && npm install && sudo npm install -g gulp@3.9.0 bower@1.6.5 && bower install
 
 ##### Build and run

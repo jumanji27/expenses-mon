@@ -21,27 +21,26 @@ export default class Expense extends Backbone.View {
 
   updateHTML(value) {
     let expense = this.el.find('.js_popup-start_active'),
-      HTMLValue = expense.attr('data-value');
+      DOMValue = expense.data('value');
 
-    if (HTMLValue) {
-      HTMLValue = parseInt(HTMLValue);
+    if (DOMValue) {
+      DOMValue = parseInt(DOMValue);
 
       if (value > 0) {
-        HTMLValue++;
+        DOMValue++;
       } else {
-        HTMLValue--;
+        DOMValue--;
       }
     } else {
-      HTMLValue = 1;
+      DOMValue = 1;
     }
 
-    let rawAmount = HTMLValue * this.model.get('unitMeasure'),
-      amount = rawAmount.toString().replace(/000$/g, 'k'),
+    let amount = this.model.formatAmount(DOMValue),
       amountEl = expense.children('.js_expense__amount');
 
-    expense.attr('data-value', HTMLValue);
+    expense.data('value', DOMValue);
 
-    if (HTMLValue) {
+    if (DOMValue) {
       amountEl.text(amount);
     } else {
       amountEl.text('');

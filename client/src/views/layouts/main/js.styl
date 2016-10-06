@@ -1,3 +1,4 @@
+// Global
 .js_none
   display: none
 .js_block
@@ -7,33 +8,44 @@
 .js_block-imp
   display: block !important
 
+/* Layout
+  .js_wrapper
+    .js_l_main
+      .js_p_main
+        .js_year
+          .js_year__total
+        .js_month
+        .js_expense__amount
+        .js_popup-start
+        .js_popup-start_active
+*/
+
+
+/*
+        .js_popup
+          .js_popup__close
+          .js_popup__button
+          .js_popup__add
+          .js_popup__remove
+          .js_popup__comment
+          .js_popup__status
+*/
+
 .js_popup__slide-top
   top: 0
   overflow: hidden
   height: 0
+.js_popup__status-error
+  color: #ff0000
+.js_popup__status-fade
+  opacity: 0
+  transition: opacity 800ms
+
+/*
+        .js_popup-body
+*/
+
 .js_popup-body__fadeout
   height: 0
   overflow: hidden
   opacity: 0
-.js_popup__status-error
-  color: #ff0000
-
-
-// Declaratively
-//
-// js_wrapper
-//   js_l_main
-//    js_p_main
-//      js_year
-//      js_year__total
-//      js_month
-//      js_expense__amount
-//      js_popup-start
-//      js_popup-start_active
-//      js_popup
-//      js_popup__close
-//      js_popup__add
-//      js_popup__remove
-//      js_popup__comment
-//      js_popup__status
-//      js_popup-body
