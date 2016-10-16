@@ -68,11 +68,11 @@ export default class Main extends Backbone.View {
       params = {
         page: this,
         yearView: this.yearView,
-        yearId: expense.closest('.js_year').data('id'),
+        yearId: expense.closest('.js_year').attr('data-id'),
         expenseView: this.expenseView,
         forReq: {
           value: 1,
-          id: expense.data('id')
+          id: expense.attr('data-id')
         }
       },
       comment = this.el.find('.js_popup__comment'),
@@ -91,18 +91,18 @@ export default class Main extends Backbone.View {
     let expense = this.el.find('.js_popup-start_active'),
       value =
         parseInt(
-          expense.data('value')
+          expense.attr('data-value')
         );
 
     if (value) {
       this.model.setReq({
         page: this,
         yearView: this.yearView,
-        yearId: expense.closest('.js_year').data('id'),
+        yearId: expense.closest('.js_year').attr('data-id'),
         expenseView: this.expenseView,
         forReq: {
           value: -1,
-          id: expense.data('id')
+          id: expense.attr('data-id')
         }
       });
     }
