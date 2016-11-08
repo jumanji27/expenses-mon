@@ -11,9 +11,11 @@ export default class Expenses extends Backbone.Model {
 
 
   getReq() {
+    const NAME = this.API_URL + 'get';
+
     $.ajax({
       type: this.API_HTTP_METHOD,
-      url: this.API_URL + 'get',
+      url: NAME,
       success: (res) => {
         this.set({
           unitMeasure: res.success.unit_measure
@@ -21,6 +23,29 @@ export default class Expenses extends Backbone.Model {
         this.set({
           expenses: this.format(res.success.expenses)
         });
+
+        localStorage.setItem(
+          NAME,
+          JSON.stringify(res.success)
+        );
+      },
+      error: () => {
+        let cacheRes = localStorage.getItem(NAME),
+          cachedResLength = cacheRes.length;
+
+        if (cachedResLength) {
+          this.set({
+            unitMeasure: JSON.parse(cacheRes).unit_measure
+          });
+          this.set({
+            expenses:
+              this.format(
+                JSON.parse(cacheRes).expenses
+              )
+          });
+        }
+
+        console.log('[LS] Working from cache')
       }
     });
   }
@@ -31,27 +56,31 @@ export default class Expenses extends Backbone.Model {
       url: this.API_URL + 'set',
       data: JSON.stringify(args.forReq),
       success: (res) => {
-        // Update views instead of model — bad design for scaling!
-        args.expenseView.updateHTML(args.forReq.value);
-        args.yearView.updateTotal(args.yearId, args.forReq.value);
-        this.sendStatusToView(args.page, res);
+        let params = {
+          success: res.success
+        }
+
+        if (res.success) {
+          // # — special symbol for replacements
+          params.text = ['Success!', '#'];
+
+          // Update views instead of model — bad design for scaling!
+          args.expenseView.updateHTML(args.forReq.value);
+          args.yearView.updateTotal(args.yearId, args.forReq.value);
+        } else {
+          params.text = res.error;
+        }
+
+        args.page.popupUpdateStatus(params);
+      },
+      error: () => {
+        args.page.popupUpdateStatus({
+          text: "You're offline, sorry"
+        });
+
+        console.log('[LS] Working from cache')
       }
     });
-  }
-
-  sendStatusToView(view, res) {
-    let params = {
-      success: res.success
-    }
-
-    if (res.success) {
-      // # — special symbol for replacements
-      params.text = ['Success!', '#'];
-    } else {
-      params.text = res.error;
-    }
-
-    view.popupUpdateStatus(params);
   }
 
   format(dbExpenses) {

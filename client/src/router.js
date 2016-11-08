@@ -1,5 +1,5 @@
-import ExpensesModel from './models/expenses';
-import MainPageView from './views/components/pages/home/main';
+import ExpensesModel from './models/expenses'
+import MainPageView from './views/components/pages/home/main'
 
 
 export default class Router extends Backbone.Router {

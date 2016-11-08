@@ -1,6 +1,8 @@
-import Router from './router';
+import Router from './router'
+import Offline from './offline'
 
 
 $(() => {
-  let router = new Router();
+  new Offline();
+  new Router();
 });

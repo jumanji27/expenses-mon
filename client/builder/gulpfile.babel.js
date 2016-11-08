@@ -46,7 +46,7 @@ let modifyJade = () => {
 
 gulp.task('clean_public', () => {
   return del(
-    ['../public/*.js', '../public/*.css', '../public/img/views/**/*'],
+    ['../public/main.js', '../public/main.css', '../public/img/views/**/*'],
     {
       force: true
     }

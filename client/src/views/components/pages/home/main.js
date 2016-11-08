@@ -1,6 +1,6 @@
-import Year from '../../shared/year/main';
-import Month from '../../shared/month/main';
-import Expense from '../../shared/expense/main';
+import Year from '../../shared/year/main'
+import Month from '../../shared/month/main'
+import Expense from '../../shared/expense/main'
 
 
 export default class Main extends Backbone.View {
